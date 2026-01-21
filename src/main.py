@@ -2,13 +2,20 @@ from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 import bcrypt
 
+# TEMPORARY: User dictionary
+users = {}
 
-# User model
-class User(BaseModel):
+
+# User models
+class RegisterUser(BaseModel):
     username: str
-    email: str
     password: str
     confirm_password: str
+
+
+class LoginUser(BaseModel):
+    username: str
+    password: str
 
 
 # Helper function for hashing password
@@ -34,7 +41,7 @@ app = FastAPI()
 
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
-def register_user(user: User):
+def register_user(user: RegisterUser):
 
     # Raise exception - input passwords do not match
     if user.password != user.confirm_password:
@@ -45,22 +52,24 @@ def register_user(user: User):
     # Hash password
     hashed_password = hash_password(user.password)
 
+    # TEMPORARY: Add user to dictionary
+    users[user.username] = hashed_password
+
     # Return response object with no passwords for security
     return {
         "username": user.username,
-        "email": user.email,
-        "password": hashed_password,
         "message": "Register successful",
     }
 
 
 @app.post("/login")
-def login_user(user: User):
+def login_user(user: LoginUser):
 
-    # TODO: Create a Users dictionary to store hashed passwords
+    # TEMPORARY: Get user from dictionary
+    hashed_password = users.get(user.username)
 
-    # Raise exception - password does not match
-    if not verify_password(user.password, hashed_password):
+    # Raise exception - password does not match / user account doesn't exist
+    if not hashed_password or not verify_password(user.password, hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
