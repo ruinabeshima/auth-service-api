@@ -43,6 +43,13 @@ app = FastAPI()
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user: RegisterUser):
 
+    # Raise exception - username already exists
+    # TEMPORARY
+    if user.username in users:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
+        )
+
     # Raise exception - input passwords do not match
     if user.password != user.confirm_password:
         raise HTTPException(
