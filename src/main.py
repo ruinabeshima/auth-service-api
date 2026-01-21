@@ -11,7 +11,7 @@ class User(BaseModel):
     confirm_password: str
 
 
-# Helper function for hashing passwords
+# Helper function for hashing password
 def hash_password(password: str):
     # Convert plain text password to bytes
     password_bytes = password.encode("utf-8")
@@ -21,6 +21,13 @@ def hash_password(password: str):
     hashed_password = bcrypt.hashpw(password_bytes, salt)
     # Convert resulting bytes back to a string for easy storage
     return hashed_password.decode("utf-8")
+
+
+# Helper function to verify password
+def verify_password(plain_password: str, hashed_password: str):
+    plain_bytes = plain_password.encode("utf-8")
+    hashed_bytes = hashed_password.encode("utf-8")
+    return bcrypt.checkpw(plain_bytes, hashed_bytes)
 
 
 app = FastAPI()
