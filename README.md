@@ -2,7 +2,7 @@
 A backend service built with FastAPI and PostgreSQL to demonstrate authentication, authorization, and backend engineering fundamentals.
 
 
-# How to use this project (MacOS)
+## How to use this project (MacOS)
 - Create a virtual environment:
 ```bash
 python3 -m venv venv
