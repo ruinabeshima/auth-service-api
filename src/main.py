@@ -34,9 +34,9 @@ app = FastAPI()
 
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
-def RegisterUser(user: User):
+def register_user(user: User):
 
-    # Raise exception - passwords do not match
+    # Raise exception - input passwords do not match
     if user.password != user.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match"
@@ -46,4 +46,26 @@ def RegisterUser(user: User):
     hashed_password = hash_password(user.password)
 
     # Return response object with no passwords for security
-    return {"username": user.username, "email": user.email, "password": hashed_password}
+    return {
+        "username": user.username,
+        "email": user.email,
+        "password": hashed_password,
+        "message": "Register successful",
+    }
+
+
+@app.post("/login")
+def login_user(user: User):
+
+    # TODO: Create a Users dictionary to store hashed passwords
+
+    # Raise exception - password does not match
+    if not verify_password(user.password, hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+            # WWW-Authenticate: Signals to the browser that user can be authenticated if a Bearer token (JWT) is provided
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return {"message": "Login successful"}
