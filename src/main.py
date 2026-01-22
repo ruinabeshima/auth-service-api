@@ -142,3 +142,10 @@ def login_user(user: LoginUser):
     token_info = TokenData(username=user.username)
     access_token = create_access_token(token_info)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/me")
+def get_user_page(token):
+    payload = verify_access_token(token)
+    username = payload.get("sub")
+    return {"message": f"Hello {username}, welcome to your page!"}
