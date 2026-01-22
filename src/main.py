@@ -1,6 +1,18 @@
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
+from datetime import datetime, timedelta, timezone
 import bcrypt
+import jwt
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+app = FastAPI()
+
+# Environment variables
+secret_key = os.getenv("SECRET_KEY")
+algorithm = os.getenv("ALGORITHM")
+expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
 
 # TEMPORARY: User dictionary
 users = {}
@@ -16,6 +28,28 @@ class RegisterUser(BaseModel):
 class LoginUser(BaseModel):
     username: str
     password: str
+
+
+class TokenData(BaseModel):
+    username: str
+
+
+# Helper function for creating JWT token
+def create_access_token(token_data: TokenData):
+    expiration_time = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
+
+    # JWT info: standard JSON data
+    payload = {
+        "sub": token_data.username,
+        "exp": expiration_time,
+        "iat": datetime.now(timezone.utc),
+    }
+
+    # Generate signature using payload and secret key
+    encoded_jwt = jwt.encode(payload, secret_key, algorithm=algorithm)
+
+    # Returns JWT token: Header + Payload + Signature
+    return encoded_jwt
 
 
 # Helper function for hashing password
@@ -35,9 +69,6 @@ def verify_password(plain_password: str, hashed_password: str):
     plain_bytes = plain_password.encode("utf-8")
     hashed_bytes = hashed_password.encode("utf-8")
     return bcrypt.checkpw(plain_bytes, hashed_bytes)
-
-
-app = FastAPI()
 
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
@@ -84,4 +115,7 @@ def login_user(user: LoginUser):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return {"message": "Login successful"}
+    # Generate JWT Token once logged in
+    token_info = TokenData(username=user.username)
+    access_token = create_access_token(token_info)
+    return {"access_token": access_token, "token_type": "bearer"}
