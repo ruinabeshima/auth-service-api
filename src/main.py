@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Depends
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 import bcrypt
@@ -6,9 +6,11 @@ import jwt
 import os
 from dotenv import load_dotenv
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 load_dotenv()
 app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # Environment variables
 secret_key = os.getenv("SECRET_KEY", "fallback-secret-key")
@@ -124,13 +126,13 @@ def register_user(user: RegisterUser):
 
 
 @app.post("/login")
-def login_user(user: LoginUser):
+def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
 
     # TEMPORARY: Get user from dictionary
-    hashed_password = users.get(user.username)
+    hashed_password = users.get(form_data.username)
 
     # Raise exception - password does not match / user account doesn't exist
-    if not hashed_password or not verify_password(user.password, hashed_password):
+    if not hashed_password or not verify_password(form_data.password, hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
@@ -139,13 +141,13 @@ def login_user(user: LoginUser):
         )
 
     # Generate JWT Token once logged in
-    token_info = TokenData(username=user.username)
+    token_info = TokenData(username=form_data.username)
     access_token = create_access_token(token_info)
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @app.get("/me")
-def get_user_page(token):
+def get_user_page(token: str = Depends(oauth2_scheme)):
     payload = verify_access_token(token)
     username = payload.get("sub")
     return {"message": f"Hello {username}, welcome to your page!"}
