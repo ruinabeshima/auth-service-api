@@ -5,13 +5,14 @@ import bcrypt
 import jwt
 import os
 from dotenv import load_dotenv
+from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 
 load_dotenv()
 app = FastAPI()
 
 # Environment variables
-secret_key = os.getenv("SECRET_KEY")
-algorithm = os.getenv("ALGORITHM")
+secret_key = os.getenv("SECRET_KEY", "fallback-secret-key")
+algorithm = os.getenv("ALGORITHM", "HS256")
 expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
 
 # TEMPORARY: User dictionary
@@ -50,6 +51,28 @@ def create_access_token(token_data: TokenData):
 
     # Returns JWT token: Header + Payload + Signature
     return encoded_jwt
+
+
+# Helper function for verifying JWT token
+def verify_access_token(token: str):
+    try:
+        decoded_payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+        return decoded_payload
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+        )
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred",
+        )
 
 
 # Helper function for hashing password
