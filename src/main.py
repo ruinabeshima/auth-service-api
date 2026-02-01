@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException, status, Depends
-from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 import bcrypt
 import jwt
@@ -7,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+import schemas
 
 load_dotenv()
 app = FastAPI()
@@ -21,24 +21,8 @@ expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
 users = {}
 
 
-# User models
-class RegisterUser(BaseModel):
-    username: str
-    password: str
-    confirm_password: str
-
-
-class LoginUser(BaseModel):
-    username: str
-    password: str
-
-
-class TokenData(BaseModel):
-    username: str
-
-
 # Helper function for creating JWT token
-def create_access_token(token_data: TokenData):
+def create_access_token(token_data: schemas.TokenData):
     expiration_time = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
 
     # JWT info: standard JSON data
@@ -97,7 +81,7 @@ def verify_password(plain_password: str, hashed_password: str):
 
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
-def register_user(user: RegisterUser):
+def register_user(user: schemas.RegisterUser):
 
     # Raise exception - username already exists
     # TEMPORARY
@@ -141,7 +125,7 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
         )
 
     # Generate JWT Token once logged in
-    token_info = TokenData(username=form_data.username)
+    token_info = schemas.TokenData(username=form_data.username)
     access_token = create_access_token(token_info)
     return {"access_token": access_token, "token_type": "bearer"}
 
