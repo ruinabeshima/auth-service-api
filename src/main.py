@@ -76,7 +76,14 @@ def login_user(
 
 
 @app.get("/me")
-def get_user_page(token: str = Depends(oauth2_scheme)):
+def get_user_page(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = verify_access_token(token)
+    username = payload.get("sub")
+
+    # Verify user exists in database
+    db_user = db.query(User).filter(User.username == username).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     username = payload.get("sub")
     return {"message": f"Hello {username}, welcome to your page!"}
