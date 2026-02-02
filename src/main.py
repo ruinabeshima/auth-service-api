@@ -1,6 +1,9 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from schemas import RegisterUser, TokenData
+from database import Base, engine, get_db
+from sqlalchemy.orm import Session
+from models import User
 from auth import (
     hash_password,
     verify_access_token,
@@ -11,16 +14,16 @@ from auth import (
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# TEMPORARY: User dictionary
-users = {}
+# Create the database tables
+Base.metadata.create_all(bind=engine)
 
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
-def register_user(user: RegisterUser):
+def register_user(user: RegisterUser, db: Session = Depends(get_db)):
 
     # Raise exception - username already exists
-    # TEMPORARY
-    if user.username in users:
+    db_user = db.query(User).filter(User.username == user.username).first()
+    if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
@@ -34,8 +37,11 @@ def register_user(user: RegisterUser):
     # Hash password
     hashed_password = hash_password(user.password)
 
-    # TEMPORARY: Add user to dictionary
-    users[user.username] = hashed_password
+    # Add user to database
+    new_user = User(username=user.username, hashed_password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
 
     # Return response object with no passwords for security
     return {
@@ -45,13 +51,17 @@ def register_user(user: RegisterUser):
 
 
 @app.post("/login")
-def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
+def login_user(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
 
-    # TEMPORARY: Get user from dictionary
-    hashed_password = users.get(form_data.username)
+    # Get user from database
+    db_user = db.query(User).filter(User.username == form_data.username).first()
 
     # Raise exception - password does not match / user account doesn't exist
-    if not hashed_password or not verify_password(form_data.password, hashed_password):
+    if not db_user or not verify_password(
+        form_data.password, str(db_user.hashed_password)
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
