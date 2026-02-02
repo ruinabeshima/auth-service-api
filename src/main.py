@@ -28,12 +28,6 @@ def register_user(user: RegisterUser, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
 
-    # Raise exception - input passwords do not match
-    if user.password != user.confirm_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match"
-        )
-
     # Hash password
     hashed_password = hash_password(user.password)
 
