@@ -1,10 +1,10 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from schemas import RegisterUser, TokenData
-from database import Base, engine, get_db
+from .schemas import RegisterUser, TokenData
+from .database import Base, engine, get_db
 from sqlalchemy.orm import Session
-from models import User
-from auth import (
+from .models import User
+from .auth import (
     hash_password,
     verify_access_token,
     verify_password,

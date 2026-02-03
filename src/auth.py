@@ -1,4 +1,4 @@
-from schemas import TokenData
+from .schemas import TokenData
 from fastapi import HTTPException, status
 import bcrypt
 import jwt

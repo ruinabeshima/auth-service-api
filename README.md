@@ -43,3 +43,8 @@ pip3 install -r requirements.txt
 ```bash
 uvicorn main:app --reload
 ```
+
+- Run tests (from the src directory):
+```bash
+python3 -m pytest
+```
