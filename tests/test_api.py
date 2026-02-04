@@ -98,3 +98,31 @@ def test_login_nonexistent_user(client):
 
     data = response.json()
     assert data["detail"] == "Invalid username or password"
+
+
+def test_get_user_page_success(client):
+    test_user = {
+        "username": "testuser123",
+        "password": "password123",
+        "confirm_password": "password123",
+    }
+
+    client.post("/register", json=test_user)
+
+    test_user_login = {"username": "testuser123", "password": "password123"}
+
+    login_response = client.post("/login", data=test_user_login)
+    data = login_response.json()
+    token = data["access_token"]
+
+    # Authorization: Bearer <token> is part of the RFC 6750 standard
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.get("/me", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["message"] == "Hello testuser123, welcome to your page!"
+
+
+def test_get_user_page_unauthorised(client):
+    response = client.get("/me")
+    assert response.status_code == 401
