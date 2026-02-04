@@ -1,0 +1,15 @@
+name: Python Authentication API CI/CD
+on: [push]
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Greeting
+        run: echo "The GitHub Actions robot is alive and running on ${{ runner.os }}!" 
+
+
+
