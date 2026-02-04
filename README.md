@@ -23,6 +23,11 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 | GET | /me | Get current user profile |
 
 
+## Error Codes 
+- 400/401: Manual Exceptions 
+- 422: Schema validation 
+
+
 ## How to use this project (MacOS)
 - Create a virtual environment:
 ```bash
