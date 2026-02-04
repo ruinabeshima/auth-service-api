@@ -1,5 +1,6 @@
 # Authentication Service API 
-A backend service built with FastAPI to demonstrate authentication, authorization, and backend engineering fundamentals.
+[![Python Authentication API CI/CD](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml/badge.svg)](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml)
+- A backend service built with FastAPI to demonstrate authentication, authorization, and backend engineering fundamentals.
 
 
 ## Features 
