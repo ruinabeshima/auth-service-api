@@ -29,10 +29,10 @@
 - 422: Schema validation 
 
 
-## How to use this project (MacOS)
+## How to use this project
 - Create a virtual environment:
 ```bash
-python3 -m venv venv
+python -m venv venv
 ```
 
 - Activate the virtual environment:
@@ -42,7 +42,7 @@ source venv/bin/activate
 
 - Install dependencies:
 ```bash
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 - Run the app (from the src directory):
@@ -52,5 +52,5 @@ uvicorn main:app --reload
 
 - Run tests (from the src directory):
 ```bash
-python3 -m pytest
+python -m pytest
 ```
