@@ -2,14 +2,22 @@ name: Python Authentication API CI/CD
 on: [push]
 
 jobs:
-  health-check:
+  test: 
     runs-on: ubuntu-latest
-    steps:
+    steps: 
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Greeting
-        run: echo "The GitHub Actions robot is alive and running on ${{ runner.os }}!" 
+      - name: Set up Python 
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.6'
+      - name: Install dependencies 
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Testing 
+        run: python -m pytest
+          
 
 
 
