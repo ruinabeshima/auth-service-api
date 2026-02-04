@@ -50,7 +50,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-- Run tests (from the src directory):
+- Run tests (from the root directory):
 ```bash
 python -m pytest
 ```
