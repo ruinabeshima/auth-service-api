@@ -45,9 +45,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-- Run the app (from the src directory):
+- Run the app:
 ```bash
-uvicorn main:app --reload
+uvicorn src.main:app --reload
 ```
 
 - Run tests (from the root directory):
