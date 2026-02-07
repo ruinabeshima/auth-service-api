@@ -4,9 +4,15 @@ from sqlalchemy.orm import sessionmaker
 from src.database import Base, get_db
 from src.main import app
 from fastapi.testclient import TestClient
+from dotenv import load_dotenv
+import os
 
-DATABASE_URL = "postgresql://user:password@localhost:5432/my_db_test"
-engine = create_engine(DATABASE_URL)
+load_dotenv()
+
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL", "postgresql://admin:Ruissa0223@localhost:5433/tests_db"
+)
+engine = create_engine(TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

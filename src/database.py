@@ -6,7 +6,7 @@ import os
 # Environment variable
 load_dotenv()
 DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://user:password@localhost:5432/my_db"
+    "DATABASE_URL", "postgresql://user:password@localhost:5432/users_db"
 )
 
 # Database connection
