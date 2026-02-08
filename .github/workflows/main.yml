@@ -1,13 +1,21 @@
 name: Python Authentication API CI/CD
-on: [push]
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 permissions:
   contents: 'read'
-  id-token: 'write'
 
 jobs:
   test: 
     runs-on: ubuntu-latest
+
+    env: 
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TEST_DATABASE_URL: postgresql://user:password@localhost:5432/tests_db
+
 
     services:
       postgres:
