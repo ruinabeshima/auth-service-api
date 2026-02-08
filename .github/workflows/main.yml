@@ -1,9 +1,28 @@
 name: Python Authentication API CI/CD
 on: [push]
 
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
 jobs:
   test: 
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: password 
+          POSTGRES_DB: tests_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps: 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,9 +36,42 @@ jobs:
           pip install -r requirements.txt
       - name: Testing 
         run: python -m pytest
-        env: 
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          ALGORITHM: ${{ secrets.ALGORITHM }}
+
+  deploy: 
+    runs-on: ubuntu-latest 
+    needs: test
+    steps: 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authentication with Google Cloud Run 
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/247931221656/locations/global/workloadIdentityPools/github-pool/providers/github
+          service_account: github-deploy@auth-service-api-486810.iam.gserviceaccount.com
+
+      - name: Set up Cloud SDK 
+        uses: google-github-actions/setup-gcloud@v2
+      
+      - name: Docker Auth 
+        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+
+      - name: Build and Push Container
+        run: |-
+          docker build -t "asia-northeast1-docker.pkg.dev/${{ vars.PROJECT_ID }}/auth-service-api/auth-service-api:${{ github.sha }}" .
+          docker push "asia-northeast1-docker.pkg.dev/${{ vars.PROJECT_ID }}/auth-service-api/auth-service-api:${{ github.sha }}"
+
+      - name: Deploy to Cloud Run
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: auth-service-api
+          region: asia-northeast1
+          image: asia-northeast1-docker.pkg.dev/${{ vars.PROJECT_ID }}/auth-service-api/auth-service-api:${{ github.sha }}
+          env_vars: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+            ALGORITHM=${{ secrets.ALGORITHM }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
           
 
 
