@@ -18,6 +18,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 Base.metadata.create_all(bind=engine)
 
 
+@app.get("/")
+def main():
+    return {"message": "Welcome to my Python Authentication API!"}
+
+
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user: RegisterUser, db: Session = Depends(get_db)):
 
