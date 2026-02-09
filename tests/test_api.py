@@ -185,3 +185,13 @@ def test_get_user_page_success(client):
 def test_get_user_page_unauthorised(client):
     response = client.get("/me")
     assert response.status_code == 401
+
+
+def test_forgot_password_flow(client):
+    data = {"email": "user1"}
+    response = client.post("/forgot-password", json=data)
+
+    assert (
+        response.json()["message"]
+        == "If the account exists, a reset link has been sent"
+    )

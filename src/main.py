@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from .schemas import RegisterUser, TokenData
+from .schemas import RegisterUser, TokenData, ForgotPasswordRequest
 from .database import Base, engine, get_db
 from sqlalchemy.orm import Session
 from .models import User
@@ -9,6 +9,7 @@ from .auth import (
     verify_access_token,
     verify_password,
     create_access_token,
+    create_reset_token,
 )
 
 app = FastAPI()
@@ -99,3 +100,15 @@ def get_user_page(token: str = Depends(oauth2_scheme), db: Session = Depends(get
 
     username = payload.get("sub")
     return {"message": f"Hello {username}, welcome to your page!"}
+
+
+@app.post("/forgot-password")
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    # Verify email exists in database
+    db_user = db.query(User).filter(User.email == request.email).first()
+
+    if db_user:
+        reset_token = create_reset_token(str(db_user.username))
+        # TODO: Send password reset email
+
+    return {"message": "If the account exists, a reset link has been sent"}

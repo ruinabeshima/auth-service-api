@@ -70,10 +70,10 @@ def test_verify_access_token_expired():
 
 # Testing if reset token is created and verified properly
 def test_reset_token_logic():
-    data = "user1"
+    data = "user1@email.com"
     token = create_reset_token(data)
 
     decoded = verify_reset_token(token)
-    assert decoded["sub"] == "user1"
+    assert decoded["sub"] == "user1@email.com"
     assert decoded["type"] == "password-reset"
     assert "exp" in decoded

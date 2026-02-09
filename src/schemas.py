@@ -23,3 +23,7 @@ class LoginUser(BaseModel):
 
 class TokenData(BaseModel):
     username: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str 

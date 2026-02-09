@@ -78,7 +78,7 @@ def verify_password(plain_password: str, hashed_password: str):
 
 
 # Helper function to create a verification token for forgotten passwords
-def create_reset_token(username):
+def create_reset_token(username: str):
     expiration_time = datetime.now(timezone.utc) + timedelta(
         minutes=reset_token_expire_minutes
     )
