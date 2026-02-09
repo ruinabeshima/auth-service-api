@@ -187,11 +187,52 @@ def test_get_user_page_unauthorised(client):
     assert response.status_code == 401
 
 
-def test_forgot_password_flow(client):
-    data = {"email": "user1"}
-    response = client.post("/forgot-password", json=data)
+def test_forgot_reset_password_flow(client):
+    test_user = {
+        "username": "testuser123",
+        "email": "user1@email.com",
+        "password": "password123",
+        "confirm_password": "password123",
+    }
 
-    assert (
-        response.json()["message"]
-        == "If the account exists, a reset link has been sent"
-    )
+    client.post("/register", json=test_user)
+
+    forgot_password_data = {"email": "user1@email.com"}
+    response = client.post("/forgot-password", json=forgot_password_data)
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["message"] == "If the account exists, a reset link has been sent"
+    assert "reset_token" in data
+
+    reset_data = {
+        "token": data["reset_token"],
+        "new_password": "new_password", 
+        "confirm_password": "new_password"
+    }
+    reset_response = client.post('/reset-password', json=reset_data)
+
+    assert reset_response.status_code == 200 
+    data = reset_response.json() 
+    assert data["message"] == "Password reset successful"
+
+
+def test_forgot_password_nonexistent_user(client):
+    test_user = {
+        "username": "testuser123",
+        "email": "user1@email.com",
+        "password": "password123",
+        "confirm_password": "password123",
+    }
+
+    client.post("/register", json=test_user)
+
+    forgot_password_data = {"email": "user2@email.com"}
+    response = client.post("/forgot-password", json=forgot_password_data)
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["message"] == "If the account exists, a reset link has been sent"
+    assert "reset_token" not in data

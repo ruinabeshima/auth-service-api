@@ -26,4 +26,17 @@ class TokenData(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: str 
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+    confirm_password: str
+
+    # Raise exception - input passwords do not match
+    @model_validator(mode="after")
+    def check_passwords_match(self):
+        if self.new_password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self

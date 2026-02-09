@@ -1,15 +1,25 @@
-from fastapi import FastAPI, HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from .schemas import RegisterUser, TokenData, ForgotPasswordRequest
-from .database import Base, engine, get_db
+from email.message import EmailMessage
 from sqlalchemy.orm import Session
+from fastapi import BackgroundTasks, FastAPI, HTTPException, status, Depends
+
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from .database import Base, engine, get_db
 from .models import User
+
+from .schemas import (
+    RegisterUser,
+    TokenData,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
+
 from .auth import (
     hash_password,
     verify_access_token,
     verify_password,
     create_access_token,
     create_reset_token,
+    verify_reset_token,
 )
 
 app = FastAPI()
@@ -109,6 +119,28 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
     if db_user:
         reset_token = create_reset_token(str(db_user.username))
-        # TODO: Send password reset email
+        # TODO: Send reset email
+        return {
+            "message": "If the account exists, a reset link has been sent",
+            "reset_token": reset_token,
+        }
 
     return {"message": "If the account exists, a reset link has been sent"}
+
+
+@app.post("/reset-password")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    # Verify the reset token
+    decoded_payload = verify_reset_token(request.token)
+    username = decoded_payload.get("sub")
+
+    # Verify user exists in database
+    db_user = db.query(User).filter(User.username == username).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update with new password
+    db_user.hashed_password = hash_password(request.new_password)  # type: ignore
+    db.commit()
+
+    return {"message": "Password reset successful"}
