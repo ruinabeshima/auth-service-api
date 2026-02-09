@@ -18,7 +18,7 @@ def test_register_flow(client):
     assert data["message"] == "Register successful"
 
 
-def test_register_duplicate_identifier(client):
+def test_register_duplicate_username(client):
     test_user = {
         "username": "testuser123",
         "password": "password123",
@@ -26,13 +26,44 @@ def test_register_duplicate_identifier(client):
         "confirm_password": "password123",
     }
 
+    new_test_user = {
+        "username": "testuser123",
+        "password": "password123",
+        "email": "testuser1@email.com",
+        "confirm_password": "password123",
+    }
+
     client.post("/register", json=test_user)
 
-    response = client.post("/register", json=test_user)
+    response = client.post("/register", json=new_test_user)
 
     assert response.status_code == 400
     data = response.json()
-    assert data["detail"] == "Invalid credentials"
+    assert data["detail"] == "Username already exists"
+
+
+def test_register_duplicate_email(client):
+    test_user = {
+        "username": "testuser123",
+        "password": "password123",
+        "email": "testuser@email.com",
+        "confirm_password": "password123",
+    }
+
+    new_test_user = {
+        "username": "testuser1234",
+        "password": "password123",
+        "email": "testuser@email.com",
+        "confirm_password": "password123",
+    }
+
+    client.post("/register", json=test_user)
+
+    response = client.post("/register", json=new_test_user)
+
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "Email already exists"
 
 
 def test_register_passwords_mismatch(client):
@@ -50,10 +81,11 @@ def test_register_passwords_mismatch(client):
     assert data["detail"][0]["msg"] == "Value error, Passwords do not match"
 
 
-def test_login_flow(client):
+def test_login_flow_username(client):
     test_user = {
         "username": "testuser123",
         "password": "password123",
+        "email": "testuser@email.com",
         "confirm_password": "password123",
     }
 
@@ -71,10 +103,33 @@ def test_login_flow(client):
     assert data["token_type"] == "bearer"
 
 
+def test_login_flow_email(client):
+    test_user = {
+        "username": "testuser123",
+        "password": "password123",
+        "email": "testuser@email.com",
+        "confirm_password": "password123",
+    }
+
+    client.post("/register", json=test_user)
+
+    test_user_login = {"username": "testuser@email.com", "password": "password123"}
+
+    # Uses data= instead of json= because of OAuth2
+    response = client.post("/login", data=test_user_login)
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+
+
 def test_login_password_mismatch(client):
     test_user = {
         "username": "testuser123",
         "password": "password123",
+        "email": "testuser123@email.com",
         "confirm_password": "password123",
     }
 
@@ -88,7 +143,7 @@ def test_login_password_mismatch(client):
     assert response.headers["WWW-Authenticate"] == "Bearer"
 
     data = response.json()
-    assert data["detail"] == "Invalid username or password"
+    assert data["detail"] == "Invalid credentials"
 
 
 def test_login_nonexistent_user(client):
@@ -100,13 +155,14 @@ def test_login_nonexistent_user(client):
     assert response.headers["WWW-Authenticate"] == "Bearer"
 
     data = response.json()
-    assert data["detail"] == "Invalid username or password"
+    assert data["detail"] == "Invalid credentials"
 
 
 def test_get_user_page_success(client):
     test_user = {
         "username": "testuser123",
         "password": "password123",
+        "email": "testuser123@email.com",
         "confirm_password": "password123",
     }
 

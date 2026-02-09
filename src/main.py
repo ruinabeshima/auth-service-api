@@ -82,7 +82,7 @@ def login_user(
         )
 
     # Generate JWT Token once logged in
-    token_info = TokenData(username=form_data.username)
+    token_info = TokenData(username=str(db_user.username))
     access_token = create_access_token(token_info)
     return {"access_token": access_token, "token_type": "bearer"}
 
