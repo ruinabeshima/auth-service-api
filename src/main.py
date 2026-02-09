@@ -33,11 +33,20 @@ def register_user(user: RegisterUser, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
 
+    # Raise exception - email already exists
+    db_user = db.query(User).filter(User.email == user.email).first()
+    if db_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists"
+        )
+
     # Hash password
     hashed_password = hash_password(user.password)
 
     # Add user to database
-    new_user = User(username=user.username, hashed_password=hashed_password)
+    new_user = User(
+        username=user.username, email=user.email, hashed_password=hashed_password
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -54,8 +63,12 @@ def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
 
-    # Get user from database
-    db_user = db.query(User).filter(User.username == form_data.username).first()
+    if "@" in form_data.username:
+        # Get email from database
+        db_user = db.query(User).filter(User.email == form_data.username).first()
+    else:
+        # Get username from database
+        db_user = db.query(User).filter(User.username == form_data.username).first()
 
     # Raise exception - password does not match / user account doesn't exist
     if not db_user or not verify_password(
@@ -63,7 +76,7 @@ def login_user(
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            detail="Invalid credentials",
             # WWW-Authenticate: Signals to the browser that user can be authenticated if a Bearer token (JWT) is provided
             headers={"WWW-Authenticate": "Bearer"},
         )

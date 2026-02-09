@@ -5,6 +5,7 @@ def test_register_flow(client):
     test_user = {
         "username": "testuser123",
         "password": "password123",
+        "email": "testuser@email.com",
         "confirm_password": "password123",
     }
 
@@ -17,10 +18,11 @@ def test_register_flow(client):
     assert data["message"] == "Register successful"
 
 
-def test_register_duplicate_username(client):
+def test_register_duplicate_identifier(client):
     test_user = {
         "username": "testuser123",
         "password": "password123",
+        "email": "testuser@email.com",
         "confirm_password": "password123",
     }
 
@@ -30,13 +32,14 @@ def test_register_duplicate_username(client):
 
     assert response.status_code == 400
     data = response.json()
-    assert data["detail"] == "Username already exists"
+    assert data["detail"] == "Invalid credentials"
 
 
 def test_register_passwords_mismatch(client):
     test_user = {
         "username": "testuser123",
         "password": "password123",
+        "email": "testuser@email.com",
         "confirm_password": "wrong_password123",
     }
     response = client.post("/register", json=test_user)
