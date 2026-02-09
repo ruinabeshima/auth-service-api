@@ -12,12 +12,15 @@ load_dotenv()
 # Environment variables
 secret_key = os.getenv("SECRET_KEY", "fallback-secret-key")
 algorithm = os.getenv("ALGORITHM", "HS256")
-expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
+access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
+reset_token_expire_minutes = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", 5))
 
 
 # Helper function for creating JWT token
 def create_access_token(token_data: TokenData):
-    expiration_time = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
+    expiration_time = datetime.now(timezone.utc) + timedelta(
+        minutes=access_token_expire_minutes
+    )
 
     # JWT info: standard JSON data
     payload = {
@@ -72,3 +75,43 @@ def verify_password(plain_password: str, hashed_password: str):
     plain_bytes = plain_password.encode("utf-8")
     hashed_bytes = hashed_password.encode("utf-8")
     return bcrypt.checkpw(plain_bytes, hashed_bytes)
+
+
+# Helper function to create a verification token for forgotten passwords
+def create_reset_token(username):
+    expiration_time = datetime.now(timezone.utc) + timedelta(
+        minutes=reset_token_expire_minutes
+    )
+
+    payload = {"sub": username, "exp": expiration_time, "type": "password-reset"}
+
+    encoded_jwt = jwt.encode(payload, secret_key, algorithm=algorithm)
+    return encoded_jwt
+
+
+def verify_reset_token(token: str):
+    try:
+        decoded_payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+
+        if decoded_payload.get("type") != "password-reset":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid reset token",
+            )
+
+        return decoded_payload
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Reset token has expired",
+        )
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred",
+        )
