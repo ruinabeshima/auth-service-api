@@ -9,6 +9,8 @@ from src.auth import (
     verify_access_token,
     hash_password,
     verify_password,
+    create_reset_token,
+    verify_reset_token,
 )
 from src.schemas import TokenData
 
@@ -64,3 +66,14 @@ def test_verify_access_token_expired():
 
     assert exc.value.status_code == 401
     assert exc.value.detail == "Token has expired"
+
+
+# Testing if reset token is created and verified properly
+def test_reset_token_logic():
+    data = "user1"
+    token = create_reset_token(data)
+
+    decoded = verify_reset_token(token)
+    assert decoded["sub"] == "user1"
+    assert decoded["type"] == "password-reset"
+    assert "exp" in decoded
