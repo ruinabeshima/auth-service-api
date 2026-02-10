@@ -16,6 +16,12 @@ jobs:
     env: 
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       TEST_DATABASE_URL: postgresql://user:password@localhost:5432/tests_db
+      SECRET_KEY: ${{ secrets.SECRET_KEY }} 
+      ALGORITHM: ${{ secrets.ALGORITHM }}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }} 
+      RESET_TOKEN_EXPIRE_MINUTES: ${{ secrets.RESET_TOKEN_EXPIRE_MINUTES }} 
+      APP_URL: http://localhost:8000 
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }} 
 
 
     services:
@@ -83,6 +89,9 @@ jobs:
             ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
             ALGORITHM=${{ secrets.ALGORITHM }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
+            RESET_TOKEN_EXPIRE_MINUTES=${{ secrets.RESET_TOKEN_EXPIRE_MINUTES }}
+            APP_URL=${{ secrets.APP_URL }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           
 
 
