@@ -1,16 +1,17 @@
-from email.message import EmailMessage
 from sqlalchemy.orm import Session
-from fastapi import BackgroundTasks, FastAPI, HTTPException, status, Depends
+from fastapi import FastAPI, HTTPException, status, Depends
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .database import Base, engine, get_db
 from .models import User
+from .email_service import send_password_reset_email
 
 from .schemas import (
     RegisterUser,
     TokenData,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    SendResetEmailRequest,
 )
 
 from .auth import (
@@ -119,7 +120,12 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
 
     if db_user:
         reset_token = create_reset_token(str(db_user.username))
-        # TODO: Send reset email
+        # Send reset email
+        new_request = SendResetEmailRequest(
+            to_email=str(db_user.email), reset_token=reset_token
+        )
+        send_password_reset_email(new_request)
+
         return {
             "message": "If the account exists, a reset link has been sent",
             "reset_token": reset_token,

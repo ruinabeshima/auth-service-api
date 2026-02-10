@@ -1,0 +1,32 @@
+import os
+import resend
+from .schemas import SendResetEmailRequest
+from dotenv import load_dotenv
+
+load_dotenv()
+
+resend.api_key = os.getenv("RESEND_API_KEY")
+app_url = os.getenv("APP_URL")
+
+def send_password_reset_email(request: SendResetEmailRequest):
+    
+    # Creating link to reset password
+    reset_link = f"{app_url}/reset-password?token={request.reset_token}"
+
+    try:
+        response = resend.Emails.send(
+            {
+                "from": "onboarding@resend.dev",
+                "to": request.to_email,
+                "subject": "Password Reset Request",
+                "html": f"""
+                  <h2>Password Reset</h2>
+                  <p>You requested a password reset. Click the link below to reset: </p>
+                  <a href="{reset_link}">Reset Password</a>
+                  <p>This link expires in 5 minutes</p>
+                """,
+            }
+        )
+        return response
+    except Exception as error:
+        return {"message": f"Failed to send email: {error}"}
