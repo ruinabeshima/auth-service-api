@@ -17,6 +17,7 @@ from .schemas import (
     TokenResponse,
     RefreshTokenRequest,
     UserResponse,
+    UpdateRoleRequest,
 )
 
 from .auth import (
@@ -254,3 +255,25 @@ def get_admin_list(
 ):
     users = db.query(User).all()
     return users
+
+
+@app.patch("/admin/update_role", response_model=UserResponse)
+def update_user_role(
+    request: UpdateRoleRequest,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin),
+):
+    # Retrieve user from database
+    target_user = db.query(User).filter(User.username == request.username).first()
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    # Update role to admin
+    target_user.role = request.role  # type: ignore
+    db.commit()
+    db.refresh(target_user)
+
+    return target_user

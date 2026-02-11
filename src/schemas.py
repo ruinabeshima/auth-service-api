@@ -67,3 +67,8 @@ class UserResponse(BaseModel):
     # Enables Pydantic to read from SQLAlchemy models (Database objects) instead of only dictionaries
     class Config:
         from_attributes = True
+
+
+class UpdateRoleRequest(BaseModel):
+    username: str
+    role: str = Field(pattern="^(user|admin)$")  # Role must be user or admin
