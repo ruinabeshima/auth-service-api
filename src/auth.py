@@ -6,6 +6,7 @@ from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import os
+import secrets
 
 load_dotenv()
 
@@ -14,6 +15,7 @@ secret_key = os.getenv("SECRET_KEY", "fallback-secret-key")
 algorithm = os.getenv("ALGORITHM", "HS256")
 access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
 reset_token_expire_minutes = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", 5))
+refresh_token_expire_days = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
 
 
 # Helper function for creating JWT token
@@ -115,3 +117,14 @@ def verify_reset_token(token: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred",
         )
+
+
+# Helper function to create a new refresh token
+def create_refresh_token():
+    # Generate random URL-safe string of 32 characters
+    return secrets.token_urlsafe(32)
+
+
+# Helper function to return expiry date of refresh token
+def get_refresh_token_expiry():
+    return datetime.now(timezone.utc) + timedelta(days=refresh_token_expire_days)
