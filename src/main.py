@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, status, Depends
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .database import Base, engine, get_db
-from .models import User
+from .models import User, RefreshToken
 from .email_service import send_password_reset_email
 
 from .schemas import (
@@ -12,6 +12,7 @@ from .schemas import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
     SendResetEmailRequest,
+    TokenResponse,
 )
 
 from .auth import (
@@ -21,6 +22,8 @@ from .auth import (
     create_access_token,
     create_reset_token,
     verify_reset_token,
+    create_refresh_token,
+    get_refresh_token_expiry,
 )
 
 app = FastAPI()
@@ -70,7 +73,7 @@ def register_user(user: RegisterUser, db: Session = Depends(get_db)):
     }
 
 
-@app.post("/login")
+@app.post("/login", response_model=TokenResponse)
 def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
@@ -96,7 +99,24 @@ def login_user(
     # Generate JWT Token once logged in
     token_info = TokenData(username=str(db_user.username))
     access_token = create_access_token(token_info)
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # Generate refresh token
+    refresh_token = create_refresh_token()
+
+    # Store refresh token in database
+    db_refresh_token = RefreshToken(
+        token=refresh_token,
+        user_id=db_user.id,  # type:ignore
+        expires_at=get_refresh_token_expiry(),
+    )
+    db.add(db_refresh_token)
+    db.commit()
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
 
 
 @app.get("/me")

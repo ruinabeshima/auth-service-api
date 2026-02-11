@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, model_validator
+from datetime import datetime
 
 
 class RegisterUser(BaseModel):
@@ -41,6 +42,13 @@ class ResetPasswordRequest(BaseModel):
             raise ValueError("Passwords do not match")
         return self
 
+
 class SendResetEmailRequest(BaseModel):
     to_email: str
-    reset_token: str 
+    reset_token: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str 
+    refresh_token: str 
+    token_type: str

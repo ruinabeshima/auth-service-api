@@ -98,7 +98,10 @@ class TestLogin:
         assert response.status_code == 200
 
         data = response.json()
+        assert "refresh_token" in data
+        assert isinstance(data["refresh_token"], str)
         assert "access_token" in data
+        assert isinstance(data["access_token"], str)
         assert data["token_type"] == "bearer"
 
     def test_login_flow_email(self, client):
@@ -119,7 +122,10 @@ class TestLogin:
         assert response.status_code == 200
 
         data = response.json()
+        assert "refresh_token" in data
+        assert isinstance(data["refresh_token"], str)
         assert "access_token" in data
+        assert isinstance(data["access_token"], str)
         assert data["token_type"] == "bearer"
 
     def test_login_password_mismatch(self, client):
