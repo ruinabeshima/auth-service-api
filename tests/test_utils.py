@@ -11,6 +11,8 @@ from src.auth import (
     verify_password,
     create_reset_token,
     verify_reset_token,
+    create_refresh_token,
+    get_refresh_token_expiry,
 )
 from src.schemas import TokenData
 
@@ -77,3 +79,30 @@ def test_reset_token_logic():
     assert decoded["sub"] == "user1@email.com"
     assert decoded["type"] == "password-reset"
     assert "exp" in decoded
+
+
+# Testing if refresh token is created properly
+def test_create_refresh_token():
+    refresh_token = create_refresh_token()
+
+    assert isinstance(refresh_token, str)
+    assert len(refresh_token) > 30
+
+    another_token = create_refresh_token()
+    assert refresh_token != another_token
+
+
+# Testing if refresh token expiry date works 
+def test_get_refresh_token_expiry(): 
+    expiry = get_refresh_token_expiry() 
+    now = datetime.now(timezone.utc)
+
+    # Expiry time should be in the future 
+    assert expiry > now 
+
+    # Should be approximately 7 days from now (within 1 minute tolerance)
+    expected = now + timedelta(days=7)
+    time_difference = abs((expiry - expected).total_seconds())
+    assert time_difference < 60
+
+
