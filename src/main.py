@@ -31,10 +31,6 @@ from .auth import (
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# Create the database tables
-Base.metadata.create_all(bind=engine)
-
-
 @app.get("/")
 def main():
     return {"message": "Welcome to my Python Authentication API!"}
