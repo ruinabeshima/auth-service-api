@@ -22,8 +22,10 @@ class RefreshToken(Base):
     user_id = Column(
         Integer, ForeignKey("users.id")
     )  # Foreign key constraint that enforces referential integrity (can't have a refresh token for a non-existent user)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    expires_at = Column(DateTime)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    expires_at = Column(DateTime(timezone=True))
     # Used to manually invalidate refresh tokens
     is_revoked = Column(Boolean, default=False)
 

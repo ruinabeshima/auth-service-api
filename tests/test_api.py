@@ -238,3 +238,31 @@ class TestForgotPassword:
         data = response.json()
         assert data["message"] == "If the account exists, a reset link has been sent"
         assert "reset_token" not in data
+
+
+class TestRefreshToken:
+    def test_refresh_token_flow(self, client):
+        test_user = {
+            "username": "testuser123",
+            "password": "password123",
+            "email": "testuser@email.com",
+            "confirm_password": "password123",
+        }
+
+        client.post("/register", json=test_user)
+
+        test_user_login = {"username": "testuser123", "password": "password123"}
+
+        login_response = client.post("/login", data=test_user_login)
+
+        refresh_token = login_response.json()["refresh_token"]
+
+        refresh_response = client.post("/refresh", json={"refresh_token": refresh_token})
+        refresh_data = refresh_response.json()
+
+        # Refresh token should be different 
+        assert refresh_data["refresh_token"] != refresh_token
+
+        # Previous token should not work
+        old_token_response = client.post("/refresh", json={"refresh_token": refresh_token})
+        assert old_token_response.status_code == 401
