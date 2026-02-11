@@ -56,3 +56,14 @@ class TokenResponse(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+
+    # Enables Pydantic to read from SQLAlchemy models (Database objects) instead of only dictionaries
+    class Config:
+        from_attributes = True

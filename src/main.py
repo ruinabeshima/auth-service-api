@@ -16,6 +16,7 @@ from .schemas import (
     SendResetEmailRequest,
     TokenResponse,
     RefreshTokenRequest,
+    UserResponse,
 )
 
 from .auth import (
@@ -237,11 +238,19 @@ def logout_user(request: RefreshTokenRequest, db: Session = Depends(get_db)):
     return {"message": "Logout successful"}
 
 
-@app.get("/me")
+@app.get("/me", response_model=UserResponse)
 def get_user_page(current_user=Depends(get_current_user)):
-    return {"message": f"Welcome, {current_user.username}!"}
+    return current_user
 
 
-@app.get("/admin")
+@app.get("/admin", response_model=UserResponse)
 def get_admin_page(admin_user=Depends(require_admin)):
-    return {"message": f"Welcome to the admin page, {admin_user.username}!"}
+    return admin_user
+
+
+@app.get("/admin/list", response_model=list[UserResponse])
+def get_admin_list(
+    db: Session = Depends(get_db), admin_user: User = Depends(require_admin)
+):
+    users = db.query(User).all()
+    return users
