@@ -175,7 +175,7 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
 
 
 @app.post("/refresh", response_model=TokenResponse)
-def update_refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
+def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
     # Find refresh token in database
     db_refresh_token = (
         db.query(RefreshToken)
@@ -198,6 +198,8 @@ def update_refresh_token(request: RefreshTokenRequest, db: Session = Depends(get
 
     # Token has expired
     if db_refresh_token.expires_at < datetime.now(timezone.utc):  # type:ignore
+        db.delete(db_refresh_token)
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token has expired",
@@ -207,7 +209,7 @@ def update_refresh_token(request: RefreshTokenRequest, db: Session = Depends(get
     db_user = db.query(User).filter(User.id == db_refresh_token.user_id).first()
     if not db_user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
 
@@ -233,3 +235,19 @@ def update_refresh_token(request: RefreshTokenRequest, db: Session = Depends(get
         "refresh_token": new_refresh_token,
         "token_type": "bearer",
     }
+
+
+@app.post("/logout")
+def logout_user(request: RefreshTokenRequest, db: Session = Depends(get_db)):
+    # Get refresh token and revoke
+    db_refresh_token = (
+        db.query(RefreshToken)
+        .filter(RefreshToken.token == request.refresh_token)
+        .first()
+    )
+
+    if db_refresh_token:
+        db_refresh_token.is_revoked = True  # type:ignore
+        db.commit()
+
+    return {"message": "Logout successful"}
