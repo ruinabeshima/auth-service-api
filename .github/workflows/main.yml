@@ -83,7 +83,9 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Alembic database migrations 
-        run: alembic upgrade head
+        run: |
+          alembic stamp head
+          alembic upgrade head
 
       - name: Authentication with Google Cloud Run 
         uses: google-github-actions/auth@v2
