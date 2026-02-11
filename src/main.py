@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, HTTPException, status, Depends
+from datetime import datetime, timezone
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .database import Base, engine, get_db
@@ -13,6 +14,7 @@ from .schemas import (
     ResetPasswordRequest,
     SendResetEmailRequest,
     TokenResponse,
+    RefreshTokenRequest,
 )
 
 from .auth import (
@@ -170,3 +172,64 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
     db.commit()
 
     return {"message": "Password reset successful"}
+
+
+@app.post("/refresh", response_model=TokenResponse)
+def update_refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
+    # Find refresh token in database
+    db_refresh_token = (
+        db.query(RefreshToken)
+        .filter(RefreshToken.token == request.refresh_token)
+        .first()
+    )
+
+    # Token doesn't exist
+    if not db_refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
+
+    # Token is revoked
+    if db_refresh_token.is_revoked:  # type:ignore
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has been revoked",
+        )
+
+    # Token has expired
+    if db_refresh_token.expires_at < datetime.now(timezone.utc):  # type:ignore
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has expired",
+        )
+
+    # Get user from database if refresh token is valid
+    db_user = db.query(User).filter(User.id == db_refresh_token.user_id).first()
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    # Generate new access token
+    new_token = TokenData(username=str(db_user.username))
+    new_access_token = create_access_token(new_token)
+
+    # Revoke old refresh token and generate new token for rotation
+    new_refresh_token = create_refresh_token()
+    db_refresh_token.is_revoked = True  # type:ignore
+
+    # Store new refresh token
+    new_db_refresh_token = RefreshToken(
+        token=new_refresh_token,
+        user_id=db_user.id,
+        expires_at=get_refresh_token_expiry(),
+    )
+    db.add(new_db_refresh_token)
+    db.commit()
+
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer",
+    }
