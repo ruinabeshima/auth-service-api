@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .database import get_db
 from .models import User, RefreshToken
 from .email_service import send_password_reset_email
+from .authorization import get_current_user, require_admin
 
 from .schemas import (
     RegisterUser,
@@ -30,6 +31,7 @@ from .auth import (
 
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 
 @app.get("/")
 def main():
@@ -115,20 +117,6 @@ def login_user(
         "refresh_token": refresh_token,
         "token_type": "bearer",
     }
-
-
-@app.get("/me")
-def get_user_page(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    payload = verify_access_token(token)
-    username = payload.get("sub")
-
-    # Verify user exists in database
-    db_user = db.query(User).filter(User.username == username).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    username = payload.get("sub")
-    return {"message": f"Hello {username}, welcome to your page!"}
 
 
 @app.post("/forgot-password")
@@ -247,3 +235,13 @@ def logout_user(request: RefreshTokenRequest, db: Session = Depends(get_db)):
         db.commit()
 
     return {"message": "Logout successful"}
+
+
+@app.get("/me")
+def get_user_page(current_user=Depends(get_current_user)):
+    return {"message": f"Welcome, {current_user.username}!"}
+
+
+@app.get("/admin")
+def get_admin_page(admin_user=Depends(require_admin)):
+    return {"message": f"Welcome to the admin page, {admin_user.username}!"}
