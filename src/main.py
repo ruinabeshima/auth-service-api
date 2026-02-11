@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, status, Depends
 from datetime import datetime, timezone
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from .database import Base, engine, get_db
+from .database import get_db
 from .models import User, RefreshToken
 from .email_service import send_password_reset_email
 
