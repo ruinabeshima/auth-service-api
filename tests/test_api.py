@@ -182,7 +182,10 @@ class TestUserPage:
         response = client.get("/me", headers=headers)
 
         assert response.status_code == 200
-        assert response.json()["message"] == "Hello testuser123, welcome to your page!"
+        assert "username" in response.json() 
+        assert "email" in response.json() 
+        assert "role" in response.json() 
+        assert response.json()["role"] == "user"
 
     def test_get_user_page_unauthorised(self, client):
         response = client.get("/me")
@@ -257,12 +260,16 @@ class TestRefreshToken:
 
         refresh_token = login_response.json()["refresh_token"]
 
-        refresh_response = client.post("/refresh", json={"refresh_token": refresh_token})
+        refresh_response = client.post(
+            "/refresh", json={"refresh_token": refresh_token}
+        )
         refresh_data = refresh_response.json()
 
-        # Refresh token should be different 
+        # Refresh token should be different
         assert refresh_data["refresh_token"] != refresh_token
 
         # Previous token should not work
-        old_token_response = client.post("/refresh", json={"refresh_token": refresh_token})
+        old_token_response = client.post(
+            "/refresh", json={"refresh_token": refresh_token}
+        )
         assert old_token_response.status_code == 401

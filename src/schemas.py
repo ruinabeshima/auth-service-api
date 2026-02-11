@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 from datetime import datetime
 
 
@@ -59,14 +59,13 @@ class RefreshTokenRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
+    # Enables Pydantic to read from SQLAlchemy models (Database objects) instead of only dictionaries
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     email: str
     role: str
-
-    # Enables Pydantic to read from SQLAlchemy models (Database objects) instead of only dictionaries
-    class Config:
-        from_attributes = True
 
 
 class UpdateRoleRequest(BaseModel):
