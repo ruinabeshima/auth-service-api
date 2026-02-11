@@ -10,6 +10,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    role = Column(String, default="user")
 
     # One to many relationship: One user can have many refresh tokens
     refresh_tokens = relationship("RefreshToken", back_populates="user")
