@@ -12,6 +12,8 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(String, default="user")
 
+    isEmailVerified = Column(Boolean, default=False)
+
     # One to many relationship: One user can have many refresh tokens
     refresh_tokens = relationship("RefreshToken", back_populates="user")
 
