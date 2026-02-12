@@ -34,4 +34,23 @@ def send_password_reset_email(request: SendResetEmailRequest):
 
 
 def send_account_verification_email(request: SendVerificationEmailRequest):
-    pass
+
+    verification_link = f"{app_url}/verify-account?token={request.verification_token}"
+
+    try:
+        response = resend.Emails.send(
+            {
+                "from": "onboarding@resend.dev",
+                "to": request.to_email,
+                "subject": "Account Verification",
+                "html": f"""
+                  <h2>Verify Account</h2>
+                  <p>You signed up to our website. Click the link below to verify your account:</p>
+                  <a href="{verification_link}">Verify account</a>
+                  <p>This link expires in 5 minutes</p>
+                """,
+            }
+        )
+        return response
+    except Exception as error:
+        return {"message": f"Failed to send email: {error}"}

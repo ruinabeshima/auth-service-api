@@ -19,6 +19,7 @@ from .schemas import (
     UserResponse,
     UpdateRoleRequest,
     SendVerificationEmailRequest,
+    VerifyEmailRequest,
 )
 
 from .auth import (
@@ -31,6 +32,7 @@ from .auth import (
     create_refresh_token,
     get_refresh_token_expiry,
     create_verification_token,
+    verify_verification_token
 )
 
 app = FastAPI()
@@ -80,7 +82,7 @@ def register_user(user: RegisterUser, db: Session = Depends(get_db)):
     # Return response object with no passwords for security
     return {
         "username": user.username,
-        "message": "Register successful",
+        "message": "Register successful. Verification email has been sent to your account!",
     }
 
 
@@ -286,3 +288,24 @@ def update_user_role(
     db.refresh(target_user)
 
     return target_user
+
+
+@app.post("/verify-account")
+def verify_account(
+    request: VerifyEmailRequest,
+    db: Session = Depends(get_db),
+):
+    # Verify the verification token
+    decoded_payload = verify_verification_token(request.token)
+    username = decoded_payload.get("sub")
+
+    # Verify user exists in database
+    db_user = db.query(User).filter(User.username == username).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update isEmailVerified
+    db_user.is_email_verified = True  # type: ignore
+    db.commit()
+
+    return {"message": "Account verification successful"}
