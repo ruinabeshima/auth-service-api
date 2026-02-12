@@ -109,6 +109,14 @@ def login_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Raise exception - account is not verified 
+    if db_user.is_email_verified == False: #type: ignore
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is not verified. Please check your email!"
+        )
+
+
     # Generate JWT Token once logged in
     token_info = TokenData(username=str(db_user.username))
     access_token = create_access_token(token_info)
