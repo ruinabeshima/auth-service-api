@@ -23,6 +23,7 @@ jobs:
       APP_URL: http://localhost:8000 
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }} 
       REFRESH_TOKEN_EXPIRE_DAYS: ${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS}}
+      VERIFICATION_TOKEN_EXPIRE_MINUTES: ${{ secrets.VERIFICATION_TOKEN_EXPIRE_MINUTES }}
 
 
     services:
@@ -67,6 +68,7 @@ jobs:
       APP_URL: ${{ secrets.APP_URL }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       REFRESH_TOKEN_EXPIRE_DAYS: ${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS}}
+      VERIFICATION_TOKEN_EXPIRE_MINUTES: ${{ secrets.VERIFICATION_TOKEN_EXPIRE_MINUTES }}
           
     steps: 
       - name: Checkout code

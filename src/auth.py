@@ -16,6 +16,9 @@ algorithm = os.getenv("ALGORITHM", "HS256")
 access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
 reset_token_expire_minutes = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", 5))
 refresh_token_expire_days = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
+verification_token_expire_minutes = int(
+    os.getenv("VERIFICATION_TOKEN_EXPIRE_MINUTES", 7)
+)
 
 
 # Helper function for creating JWT token
@@ -128,3 +131,42 @@ def create_refresh_token():
 # Helper function to return expiry date of refresh token
 def get_refresh_token_expiry():
     return datetime.now(timezone.utc) + timedelta(days=refresh_token_expire_days)
+
+
+def create_verification_token(username: str):
+    expiration_time = datetime.now(timezone.utc) + timedelta(
+        minutes=verification_token_expire_minutes
+    )
+
+    payload = {"sub": username, "exp": expiration_time, "type": "account-verification"}
+
+    encoded_jwt = jwt.encode(payload, secret_key, algorithm=algorithm)
+    return encoded_jwt
+
+
+def verify_verification_token(token: str):
+    try:
+        decoded_payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+
+        if decoded_payload.get("type") != "account-verification":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid verification token",
+            )
+
+        return decoded_payload
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Verification token has expired",
+        )
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred",
+        )
