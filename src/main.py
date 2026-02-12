@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .database import get_db
 from .models import User, RefreshToken
-from .email_service import send_password_reset_email
+from .email_service import send_password_reset_email, send_account_verification_email
 from .authorization import get_current_user, require_admin
 
 from .schemas import (
@@ -18,6 +18,7 @@ from .schemas import (
     RefreshTokenRequest,
     UserResponse,
     UpdateRoleRequest,
+    SendVerificationEmailRequest,
 )
 
 from .auth import (
@@ -29,6 +30,7 @@ from .auth import (
     verify_reset_token,
     create_refresh_token,
     get_refresh_token_expiry,
+    create_verification_token,
 )
 
 app = FastAPI()
@@ -67,6 +69,13 @@ def register_user(user: RegisterUser, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Send verification email
+    verification_request = SendVerificationEmailRequest(
+        to_email=str(user.email),
+        verification_token=create_verification_token(str(user.username)),
+    )
+    send_account_verification_email(verification_request)
 
     # Return response object with no passwords for security
     return {

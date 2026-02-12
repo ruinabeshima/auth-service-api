@@ -48,6 +48,11 @@ class SendResetEmailRequest(BaseModel):
     reset_token: str
 
 
+class SendVerificationEmailRequest(BaseModel):
+    to_email: str 
+    verification_token: str 
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str

@@ -1,6 +1,6 @@
 import os
 import resend
-from .schemas import SendResetEmailRequest
+from .schemas import SendResetEmailRequest, SendVerificationEmailRequest
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,8 +8,9 @@ load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
 app_url = os.getenv("APP_URL")
 
+
 def send_password_reset_email(request: SendResetEmailRequest):
-    
+
     # Creating link to reset password
     reset_link = f"{app_url}/reset-password?token={request.reset_token}"
 
@@ -30,3 +31,7 @@ def send_password_reset_email(request: SendResetEmailRequest):
         return response
     except Exception as error:
         return {"message": f"Failed to send email: {error}"}
+
+
+def send_account_verification_email(request: SendVerificationEmailRequest):
+    pass
