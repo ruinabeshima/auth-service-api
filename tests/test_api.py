@@ -1,4 +1,5 @@
 import pytest
+from src.auth import create_verification_token
 
 
 class TestRegister:
@@ -83,7 +84,7 @@ class TestRegister:
 
 
 class TestLogin:
-    """
+
     def test_login_flow_username(self, client):
         test_user = {
             "username": "testuser123",
@@ -93,6 +94,15 @@ class TestLogin:
         }
 
         client.post("/register", json=test_user)
+
+        # Verifying user
+        verification_token = create_verification_token("testuser123")
+        verification_input = {"token": verification_token}
+        verification_response = client.post("/verify-account", json=verification_input)
+        assert verification_response.status_code == 200
+        assert (
+            verification_response.json()["message"] == "Account verification successful"
+        )
 
         test_user_login = {"username": "testuser123", "password": "password123"}
 
@@ -108,7 +118,6 @@ class TestLogin:
         assert isinstance(data["access_token"], str)
         assert data["token_type"] == "bearer"
 
-
     def test_login_flow_email(self, client):
         test_user = {
             "username": "testuser123",
@@ -118,6 +127,15 @@ class TestLogin:
         }
 
         client.post("/register", json=test_user)
+
+        # Verifying user
+        verification_token = create_verification_token("testuser123")
+        verification_input = {"token": verification_token}
+        verification_response = client.post("/verify-account", json=verification_input)
+        assert verification_response.status_code == 200
+        assert (
+            verification_response.json()["message"] == "Account verification successful"
+        )
 
         test_user_login = {"username": "testuser@email.com", "password": "password123"}
 
@@ -132,7 +150,6 @@ class TestLogin:
         assert "access_token" in data
         assert isinstance(data["access_token"], str)
         assert data["token_type"] == "bearer"
-    """
 
     def test_login_password_mismatch(self, client):
         test_user = {
@@ -167,7 +184,6 @@ class TestLogin:
 
 
 class TestUserPage:
-    """
     def test_get_user_page_success(self, client):
         test_user = {
             "username": "testuser123",
@@ -177,6 +193,16 @@ class TestUserPage:
         }
 
         client.post("/register", json=test_user)
+
+        # Verifying user
+        verification_token = create_verification_token("testuser123")
+        verification_input = {"token": verification_token}
+        verification_response = client.post("/verify-account", json=verification_input)
+        assert verification_response.status_code == 200
+        assert (
+            verification_response.json()["message"] == "Account verification successful"
+        )
+
 
         test_user_login = {"username": "testuser123", "password": "password123"}
 
@@ -193,7 +219,7 @@ class TestUserPage:
         assert "email" in response.json()
         assert "role" in response.json()
         assert response.json()["role"] == "user"
-    """
+    
 
     def test_get_user_page_unauthorised(self, client):
         response = client.get("/me")
@@ -251,7 +277,7 @@ class TestForgotPassword:
         assert "reset_token" not in data
 
 
-"""
+
 class TestRefreshToken:
     def test_refresh_token_flow(self, client):
         test_user = {
@@ -263,12 +289,20 @@ class TestRefreshToken:
 
         client.post("/register", json=test_user)
 
-        test_user_login = {"username": "testuser123", "password": "password123"}
+        # Verifying user
+        verification_token = create_verification_token("testuser123")
+        verification_input = {"token": verification_token}
+        verification_response = client.post("/verify-account", json=verification_input)
+        assert verification_response.status_code == 200
+        assert (
+            verification_response.json()["message"] == "Account verification successful"
+        )
 
+
+        test_user_login = {"username": "testuser123", "password": "password123"}
         login_response = client.post("/login", data=test_user_login)
 
         refresh_token = login_response.json()["refresh_token"]
-
         refresh_response = client.post(
             "/refresh", json={"refresh_token": refresh_token}
         )
@@ -282,4 +316,4 @@ class TestRefreshToken:
             "/refresh", json={"refresh_token": refresh_token}
         )
         assert old_token_response.status_code == 401
-"""
+
