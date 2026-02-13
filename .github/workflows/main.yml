@@ -86,7 +86,6 @@ jobs:
 
       - name: Run Alembic database migrations 
         run: |
-          alembic stamp head
           alembic upgrade head
 
       - name: Authentication with Google Cloud Run 
