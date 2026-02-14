@@ -284,7 +284,7 @@ def refresh_token(
     if db_refresh_token.is_revoked:  # type:ignore
         # Add audit log
         log_data = CreateAuditLogRequest(
-            user_id=db_refresh_token.user_id, #type: ignore
+            user_id=db_refresh_token.user_id,  # type: ignore
             event_type="REFRESH TOKEN FAILURE: Token is revoked",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
@@ -298,7 +298,7 @@ def refresh_token(
     if db_refresh_token.expires_at < datetime.now(timezone.utc):  # type:ignore
         # Add audit log
         log_data = CreateAuditLogRequest(
-            user_id=db_refresh_token.user_id, #type: ignore
+            user_id=db_refresh_token.user_id,  # type: ignore
             event_type="REFRESH TOKEN FAILURE: Token has expired",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
@@ -344,7 +344,7 @@ def refresh_token(
 
     # Add audit log
     log_data = CreateAuditLogRequest(
-        user_id=db_user.id, #type: ignore
+        user_id=db_user.id,  # type: ignore
         event_type="REFRESH TOKEN SUCCESS: New access token generated and refresh token rotated",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
@@ -357,17 +357,34 @@ def refresh_token(
 
 
 @app.post("/logout")
-def logout_user(request: RefreshTokenRequest, db: Session = Depends(get_db)):
+def logout_user(
+    request: Request, logout_request: RefreshTokenRequest, db: Session = Depends(get_db)
+):
     # Get refresh token and revoke
     db_refresh_token = (
         db.query(RefreshToken)
-        .filter(RefreshToken.token == request.refresh_token)
+        .filter(RefreshToken.token == logout_request.refresh_token)
         .first()
     )
 
     if db_refresh_token:
         db_refresh_token.is_revoked = True  # type:ignore
         db.commit()
+
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=db_refresh_token.user_id,  # type: ignore
+            event_type="LOGOUT SUCCESS: User logged out",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+    if not db_refresh_token: 
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="LOGOUT FAILURE: Refresh token not found",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
 
     return {"message": "Logout successful"}
 
