@@ -658,3 +658,66 @@ def update_project(
     create_audit_log(db=db, request=request, log_data=log_data)
 
     return project
+
+
+@app.delete("/projects/{id}")
+def delete_project(
+    id: int,
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Get already existing project
+    project = db.query(Project).filter(Project.id == id).first()
+
+    if not project:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=user.id,
+            event_type="DELETE PROJECT FAILURE:  Project not found",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    if project.user_id != user.id and user.role != "admin":  # type: ignore
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=user.id,
+            event_type="DELETE PROJECT FAILURE: Not allowed to delete project",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to delete this project",
+        )
+
+    if project.is_deleted:  # type: ignore
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=user.id,
+            event_type="DELETE PROJECT FAILURE:  Project has been deleted already",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project has been deleted already",
+        )
+
+    project.is_deleted = True  # type: ignore
+    db.commit()
+    db.refresh(project)
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=user.id,
+        event_type="DELETE PROJECT SUCCESS: Project has been deleted successfully",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
+
+    return {"message": "Project has been successfully deleted"}
