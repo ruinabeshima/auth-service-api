@@ -20,11 +20,11 @@ from .schemas import (
     UpdateRoleRequest,
     SendVerificationEmailRequest,
     VerifyEmailRequest,
+    PaginatedUsersResponse,
 )
 
 from .auth import (
     hash_password,
-    verify_access_token,
     verify_password,
     create_access_token,
     create_reset_token,
@@ -32,7 +32,7 @@ from .auth import (
     create_refresh_token,
     get_refresh_token_expiry,
     create_verification_token,
-    verify_verification_token
+    verify_verification_token,
 )
 
 app = FastAPI()
@@ -109,13 +109,12 @@ def login_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Raise exception - account is not verified 
-    if db_user.is_email_verified == False: #type: ignore
+    # Raise exception - account is not verified
+    if db_user.is_email_verified == False:  # type: ignore
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is not verified. Please check your email!"
+            detail="Account is not verified. Please check your email!",
         )
-
 
     # Generate JWT Token once logged in
     token_info = TokenData(username=str(db_user.username))
@@ -268,12 +267,22 @@ def get_admin_page(admin_user=Depends(require_admin)):
     return admin_user
 
 
-@app.get("/admin/list", response_model=list[UserResponse])
+@app.get("/admin/list", response_model=PaginatedUsersResponse)
 def get_admin_list(
-    db: Session = Depends(get_db), admin_user: User = Depends(require_admin)
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_admin),
+    page: int = 1,
+    page_size: int = 10,
 ):
-    users = db.query(User).all()
-    return users
+    users_count = db.query(User).count()
+
+    # Offset: Starting index for the database query
+    users = db.query(User).offset((page - 1) * page_size).limit(page_size).all()
+
+    response = PaginatedUsersResponse(
+        total=users_count, page=page, page_size=page_size, users=users  # type: ignore
+    )
+    return response
 
 
 @app.patch("/admin/update_role", response_model=UserResponse)

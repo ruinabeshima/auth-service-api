@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 from datetime import datetime
+from typing import List
 
 
 class RegisterUser(BaseModel):
@@ -80,3 +81,10 @@ class UserResponse(BaseModel):
 class UpdateRoleRequest(BaseModel):
     username: str
     role: str = Field(pattern="^(user|admin)$")  # Role must be user or admin
+
+
+class PaginatedUsersResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    users: List[UserResponse]
