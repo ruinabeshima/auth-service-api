@@ -16,6 +16,7 @@ class User(Base):
 
     # One to many relationship: One user can have many refresh tokens
     refresh_tokens = relationship("RefreshToken", back_populates="user")
+    audit_logs = relationship("AuditLogs", back_populates="user")
 
 
 class RefreshToken(Base):
@@ -34,3 +35,18 @@ class RefreshToken(Base):
 
     # Many to one relationship: Many refresh tokens belong to one user
     user = relationship("User", back_populates="refresh_tokens")
+
+
+class AuditLogs(Base):
+    __tablename__ = "audit_logs"
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    event_type = Column(String)
+    ip_address = Column(String)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    user = relationship("User", back_populates="audit_logs")

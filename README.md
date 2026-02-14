@@ -89,7 +89,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 ### User Roles 
 1. An account may have a default 'user' role or an 'admin' role. 
 2. All users can access the `GET /me` route, but only admins can access the `GET /admin` route. 
-3. The route `GET /admin/list` allows admins to obtain a list of all users, their emails and their roles. 
+3. The route `GET /admin/list` allows admins to obtain a list of all users, their emails and their roles. This page is paginated through an `offset`.
 4. Already existing admins can use the route `PATCH /admin/update_role` to update users to admin role, and vice versa. 
 5. There is no way for a default user to promote themselves to admin; by using `create_admin.py`, a user can be manually changed to an admin. Run: 
 ```bash
