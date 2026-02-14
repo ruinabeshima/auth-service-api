@@ -419,22 +419,40 @@ def get_admin_list(
 
 @app.patch("/admin/update_role", response_model=UserResponse)
 def update_user_role(
-    request: UpdateRoleRequest,
+    request: Request,
+    update_role_request: UpdateRoleRequest,
     db: Session = Depends(get_db),
     admin_user: User = Depends(require_admin),
 ):
     # Retrieve user from database
-    target_user = db.query(User).filter(User.username == request.username).first()
+    target_user = (
+        db.query(User).filter(User.username == update_role_request.username).first()
+    )
     if not target_user:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="UPDATE ROLE FAILURE: Target user not found",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
 
     # Update role to admin
-    target_user.role = request.role  # type: ignore
+    target_user.role = update_role_request.role  # type: ignore
     db.commit()
     db.refresh(target_user)
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=target_user.id, #type: ignore
+        event_type="UPDATE_ROLE_SUCCESS: Role updated successfully",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
+
 
     return target_user
 
