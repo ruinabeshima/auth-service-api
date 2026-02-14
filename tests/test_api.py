@@ -312,3 +312,82 @@ class TestRefreshToken:
             "/refresh", json={"refresh_token": refresh_token}
         )
         assert old_token_response.status_code == 401
+
+
+class TestProject:
+    def test_project_flow(self, client):
+        test_user = {
+            "username": "testuser123",
+            "password": "password123",
+            "email": "testuser@email.com",
+            "confirm_password": "password123",
+        }
+
+        client.post("/register", json=test_user)
+
+        # Verifying user
+        verification_token = create_verification_token("testuser123")
+        verification_input = {"token": verification_token}
+        verification_response = client.post("/verify-account", json=verification_input)
+        assert verification_response.status_code == 200
+        assert (
+            verification_response.json()["message"] == "Account verification successful"
+        )
+
+        test_user_login = {"username": "testuser123", "password": "password123"}
+        login_response = client.post("/login", data=test_user_login)
+        headers = {"Authorization": f"Bearer {login_response.json()["access_token"]}"}
+
+        # Create a new project
+        new_project = {
+            "name": "A new project",
+            "description": "Project description",
+        }
+        project_response = client.post(
+            "/projects/add", json=new_project, headers=headers
+        )
+
+        assert project_response.status_code == 200
+        project_data = project_response.json()
+        assert project_data["name"] == "A new project"
+        assert project_data["description"] == "Project description"
+        assert project_data["id"] == 1
+
+        # View project
+        view_project = client.get("/projects", headers=headers)
+        assert view_project.status_code == 200
+        assert view_project.json()["total"] == 1
+        assert view_project.json()["page"] == 1
+        assert view_project.json()["page_size"] == 10
+        assert view_project.json()["projects"] == [
+            {
+                "id": 1,
+                "name": "A new project",
+                "description": "Project description",
+                "user_id": 1,
+            }
+        ]
+
+        # View singular project
+        view_sing_project = client.get("/projects/1", headers=headers)
+        assert view_sing_project.status_code == 200
+        assert view_sing_project.json()["name"] == "A new project"
+        assert view_sing_project.json()["description"] == "Project description"
+        assert view_sing_project.json()["id"] == 1
+
+        # Update project
+        update_data = {"name": "Updated project", "description": "Updated description"}
+        update_project = client.patch("/projects/1", json=update_data, headers=headers)
+
+        assert update_project.status_code == 200
+        assert update_project.json()["name"] == "Updated project"
+        assert update_project.json()["description"] == "Updated description"
+        assert update_project.json()["id"] == 1
+        assert update_project.json()["user_id"] == 1
+
+        # Delete project
+        delete_response = client.delete("/projects/1", headers=headers)
+        assert delete_response.status_code == 200
+        assert (
+            delete_response.json()["message"] == "Project has been successfully deleted"
+        )
