@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .database import Base
 from datetime import datetime, timezone
@@ -17,6 +17,7 @@ class User(Base):
     # One to many relationship: One user can have many refresh tokens
     refresh_tokens = relationship("RefreshToken", back_populates="user")
     audit_logs = relationship("AuditLogs", back_populates="user")
+    projects = relationship("Project", back_populates="user")
 
 
 class RefreshToken(Base):
@@ -50,3 +51,32 @@ class AuditLogs(Base):
     )
 
     user = relationship("User", back_populates="audit_logs")
+
+
+class Project(Base):
+    __tablename__ = "projects"
+    id = Column(Integer, primary_key=True, index=True)
+
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=None,
+        nullable=True,
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    is_deleted = Column(Boolean, default=False, index=True)
+
+    user = relationship("User", back_populates="projects")
+
+    # Constraint: One user cannot have two projects with the same name, but different users can have projects with the same name
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_user_project_name"),
+    )
