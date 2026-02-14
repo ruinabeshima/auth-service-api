@@ -202,7 +202,7 @@ def forgot_password(
 
         # Add audit log
         log_data = CreateAuditLogRequest(
-            user_id=db_user.id, #type: ignore
+            user_id=db_user.id,  # type: ignore
             event_type="EMAIL FORGOT PASSWORD SUCCESS: Email sent to reset password",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
@@ -214,7 +214,7 @@ def forgot_password(
 
     # Add audit log
     log_data = CreateAuditLogRequest(
-        user_id=None, 
+        user_id=None,
         event_type="EMAIL FORGOT PASSWORD FAILURE: Email does not exist",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
@@ -257,22 +257,38 @@ def reset_password(
 
 
 @app.post("/refresh", response_model=TokenResponse)
-def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
+def refresh_token(
+    request, Request, refresh_data: RefreshTokenRequest, db: Session = Depends(get_db)
+):
     # Find refresh token in database
     db_refresh_token = (
         db.query(RefreshToken)
-        .filter(RefreshToken.token == request.refresh_token)
+        .filter(RefreshToken.token == refresh_data.refresh_token)
         .first()
     )
 
     # Token doesn't exist
     if not db_refresh_token:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="REFRESH TOKEN FAILURE: Token does not exist",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
         )
 
     # Token is revoked
     if db_refresh_token.is_revoked:  # type:ignore
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=db_refresh_token.user_id, #type: ignore
+            event_type="REFRESH TOKEN FAILURE: Token is revoked",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token has been revoked",
@@ -280,6 +296,13 @@ def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
 
     # Token has expired
     if db_refresh_token.expires_at < datetime.now(timezone.utc):  # type:ignore
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=db_refresh_token.user_id, #type: ignore
+            event_type="REFRESH TOKEN FAILURE: Token has expired",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         db.delete(db_refresh_token)
         db.commit()
         raise HTTPException(
@@ -290,6 +313,13 @@ def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
     # Get user from database if refresh token is valid
     db_user = db.query(User).filter(User.id == db_refresh_token.user_id).first()
     if not db_user:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="REFRESH TOKEN FAILURE: User not found",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
@@ -311,6 +341,13 @@ def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
     )
     db.add(new_db_refresh_token)
     db.commit()
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=db_user.id, #type: ignore
+        event_type="REFRESH TOKEN SUCCESS: New access token generated and refresh token rotated",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
 
     return {
         "access_token": new_access_token,
