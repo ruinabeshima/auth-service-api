@@ -202,7 +202,7 @@ def forgot_password(
 
         # Add audit log
         log_data = CreateAuditLogRequest(
-            user_id=None,  
+            user_id=db_user.id, #type: ignore
             event_type="EMAIL FORGOT PASSWORD SUCCESS: Email sent to reset password",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
@@ -212,9 +212,10 @@ def forgot_password(
             "reset_token": reset_token,
         }
 
+    # Add audit log
     log_data = CreateAuditLogRequest(
-        user_id=db_user.id,  # type: ignore
-        event_type="EMAIL FORGOT PASSWORD SUCCESS: Email sent to reset password",
+        user_id=None, 
+        event_type="EMAIL FORGOT PASSWORD FAILURE: Email does not exist",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -222,19 +223,35 @@ def forgot_password(
 
 
 @app.post("/reset-password")
-def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(
+    request: Request, reset_data: ResetPasswordRequest, db: Session = Depends(get_db)
+):
     # Verify the reset token
-    decoded_payload = verify_reset_token(request.token)
+    decoded_payload = verify_reset_token(reset_data.token)
     username = decoded_payload.get("sub")
 
     # Verify user exists in database
     db_user = db.query(User).filter(User.username == username).first()
     if not db_user:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="RESET PASSWORD FAILURE: User not found",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(status_code=404, detail="User not found")
 
     # Update with new password
-    db_user.hashed_password = hash_password(request.new_password)  # type: ignore
+    db_user.hashed_password = hash_password(reset_data.new_password)  # type: ignore
     db.commit()
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=db_user.id,  # type: ignore
+        event_type="RESET PASSWORD SUCCESS: Password reset successfully",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
 
     return {"message": "Password reset successful"}
 
