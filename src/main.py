@@ -186,9 +186,11 @@ def login_user(
 
 
 @app.post("/forgot-password")
-def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(
+    request: Request, reset_data: ForgotPasswordRequest, db: Session = Depends(get_db)
+):
     # Verify email exists in database
-    db_user = db.query(User).filter(User.email == request.email).first()
+    db_user = db.query(User).filter(User.email == reset_data.email).first()
 
     if db_user:
         reset_token = create_reset_token(str(db_user.username))
@@ -198,10 +200,23 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
         )
         send_password_reset_email(new_request)
 
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,  
+            event_type="EMAIL FORGOT PASSWORD SUCCESS: Email sent to reset password",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         return {
             "message": "If the account exists, a reset link has been sent",
             "reset_token": reset_token,
         }
+
+    log_data = CreateAuditLogRequest(
+        user_id=db_user.id,  # type: ignore
+        event_type="EMAIL FORGOT PASSWORD SUCCESS: Email sent to reset password",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
 
     return {"message": "If the account exists, a reset link has been sent"}
 
