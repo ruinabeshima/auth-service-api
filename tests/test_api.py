@@ -203,7 +203,6 @@ class TestUserPage:
             verification_response.json()["message"] == "Account verification successful"
         )
 
-
         test_user_login = {"username": "testuser123", "password": "password123"}
 
         login_response = client.post("/login", data=test_user_login)
@@ -219,7 +218,6 @@ class TestUserPage:
         assert "email" in response.json()
         assert "role" in response.json()
         assert response.json()["role"] == "user"
-    
 
     def test_get_user_page_unauthorised(self, client):
         response = client.get("/me")
@@ -277,7 +275,6 @@ class TestForgotPassword:
         assert "reset_token" not in data
 
 
-
 class TestRefreshToken:
     def test_refresh_token_flow(self, client):
         test_user = {
@@ -298,7 +295,6 @@ class TestRefreshToken:
             verification_response.json()["message"] == "Account verification successful"
         )
 
-
         test_user_login = {"username": "testuser123", "password": "password123"}
         login_response = client.post("/login", data=test_user_login)
 
@@ -316,4 +312,3 @@ class TestRefreshToken:
             "/refresh", json={"refresh_token": refresh_token}
         )
         assert old_token_response.status_code == 401
-

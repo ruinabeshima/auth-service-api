@@ -258,7 +258,7 @@ def reset_password(
 
 @app.post("/refresh", response_model=TokenResponse)
 def refresh_token(
-    request, Request, refresh_data: RefreshTokenRequest, db: Session = Depends(get_db)
+    request: Request, refresh_data: RefreshTokenRequest, db: Session = Depends(get_db)
 ):
     # Find refresh token in database
     db_refresh_token = (
@@ -448,11 +448,10 @@ def update_user_role(
 
     # Add audit log
     log_data = CreateAuditLogRequest(
-        user_id=target_user.id, #type: ignore
+        user_id=target_user.id,  # type: ignore
         event_type="UPDATE_ROLE_SUCCESS: Role updated successfully",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
-
 
     return target_user
 
