@@ -111,7 +111,9 @@ def register_user(user: RegisterUser, request: Request, db: Session = Depends(ge
 
 @app.post("/login", response_model=TokenResponse)
 def login_user(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
 ):
 
     if "@" in form_data.username:
@@ -125,6 +127,13 @@ def login_user(
     if not db_user or not verify_password(
         form_data.password, str(db_user.hashed_password)
     ):
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=db_user.id if db_user else None,  # type:ignore
+            event_type="LOGIN FAILURE: Invalid credentials",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -134,6 +143,13 @@ def login_user(
 
     # Raise exception - account is not verified
     if db_user.is_email_verified == False:  # type: ignore
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="LOGIN FAILURE: Account not verified",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is not verified. Please check your email!",
@@ -154,6 +170,13 @@ def login_user(
     )
     db.add(db_refresh_token)
     db.commit()
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=db_user.id,  # type: ignore
+        event_type="LOGIN SUCCESS: Access and refresh token obtained",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
 
     return {
         "access_token": access_token,
