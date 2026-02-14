@@ -1,4 +1,4 @@
-# Authentication Service API 
+# Project Management and Authentication API 
 [![Python Authentication API CI/CD](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml/badge.svg)](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml)
 
 A backend service built with FastAPI to demonstrate authentication, authorization, and backend engineering fundamentals.
@@ -17,6 +17,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 - **CI/CD**: GitHub Actions
 
 ## Features 
+- **Projects**: Signed-in users can create their own projects, view a list of their projects, view a single project, update their project and delete their projects. 
 - **User Registration**: Secure signup with password hashing using bcrypt
 - **JWT Authentication**: Stateless login issuing signed bearer tokens
 - **Password Reset**: Secure password reset flow with email verification
@@ -97,6 +98,10 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 python create_admin.py <username>
 ```
 
+### Projects 
+1. Signed-in users can create a project, view them, update them and delete them. 
+2. Only the owners of the project and admins can interact with the project. 
+
 
 ## API Routes
 | Method | Endpoint | Description |
@@ -104,6 +109,8 @@ python create_admin.py <username>
 | GET | `/me` | Protected route for all users | 
 | GET | `/admin` | Admin-only protected route
 | GET | `/admin/list` | Get list of all users (admin only) | 
+| GET | `/projects` | Get list of projects (owner and admin only) | 
+| GET | `/projects/{id}` | Get a singular project (owner and admin only) | 
 | POST | `/register` | Create a new user account |
 | POST | `/login` | Login and receive access and refresh tokens |
 | POST | `/forgot-password` | Request password reset email |
@@ -111,14 +118,18 @@ python create_admin.py <username>
 | POST | `/refresh` | Get new access token using existing refresh token | 
 | POST | `/logout` | Revoke refresh token and logout | 
 | POST | `/verify-account` | Verify email address with verification token| 
-| PATCH | `/admin/update_role` | Update user role (admin only)
+| POST | `/projects/add` | Create new project | 
+| PATCH | `/admin/update_role` | Update user role (admin only) | 
+| PATCH | `/projects/{id}` | Update project (owner and admin only) |
+| DELETE | `/projects/{id}` | Delete project (owner and admin only) |  
 
 
 ## Database Models 
 - `users`: id, username, email, hashed_password, role, is_email_verified 
 - `refresh_tokens`: id, token, user_id, created_at, expires_at, is_revoked
-- One to many relationship between users and refresh tokens: One user can have many refresh tokens 
 - `audit_logs`: id, user_id, event_type, ip_address, created_at
+- `projects`: id, name, description, user_id, created_at, updated_at, is_deleted
+- One to many relationship between users and refresh tokens, audit logs and projects
 
 
 ## Error Codes 
