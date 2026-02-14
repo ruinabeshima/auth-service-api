@@ -88,3 +88,9 @@ class PaginatedUsersResponse(BaseModel):
     page: int
     page_size: int
     users: List[UserResponse]
+
+
+class CreateAuditLogRequest(BaseModel):
+    user_id : int 
+    event_type: str 
+    
