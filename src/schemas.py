@@ -102,8 +102,15 @@ class CreateProject(BaseModel):
 
 class ProjectResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: int
-    name: str 
-    description: str 
+    name: str
+    description: str
     user_id: int
+
+
+class PaginatedProjects(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    projects: List[ProjectResponse]

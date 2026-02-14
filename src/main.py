@@ -25,6 +25,7 @@ from .schemas import (
     CreateAuditLogRequest,
     CreateProject,
     ProjectResponse,
+    PaginatedProjects,
 )
 
 from .auth import (
@@ -492,6 +493,38 @@ def verify_account(
     create_audit_log(db=db, request=request, log_data=log_data)
 
     return {"message": "Account verification successful"}
+
+
+@app.get("/projects", response_model=PaginatedProjects)
+def get_user_projects(
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+    page: int = 1,
+    page_size: int = 10,
+):
+    projects_count = db.query(Project).filter(Project.user_id == user.id).count()
+    projects = (
+        db.query(Project)
+        .filter(Project.user_id == user.id)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=user.id,
+        event_type=f"GET PROJECT SUCCESS: Page {page} of projects shown",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
+
+    return {
+        "total": projects_count,
+        "page": page,
+        "page_size": page_size,
+        "projects": projects,
+    }
 
 
 @app.post("/projects/add", response_model=ProjectResponse)
