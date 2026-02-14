@@ -527,6 +527,45 @@ def get_user_projects(
     }
 
 
+@app.get("/projects/{id}", response_model=ProjectResponse)
+def get_project_by_id(
+    id: int,
+    request: Request,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    project = (
+        db.query(Project).filter(Project.id == id, Project.is_deleted == False).first()
+    )
+
+    if not project:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=user.id,
+            event_type="GET PROJECT BY ID FAILURE: Project not found",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
+        )
+
+    if project.user_id != user.id and user.role != "admin":
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=user.id,
+            event_type="GET PROJECT BY ID FAILURE: Not authorised to view project",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to view this project",
+        )
+
+    return project
+
+
 @app.post("/projects/add", response_model=ProjectResponse)
 def create_new_project(
     request: Request,
