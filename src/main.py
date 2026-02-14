@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .database import get_db
-from .models import User, RefreshToken
+from .models import User, RefreshToken, Project
 from .email_service import send_password_reset_email, send_account_verification_email
 from .authorization import get_current_user, require_admin
 from .audit_logs import create_audit_log
@@ -23,6 +23,8 @@ from .schemas import (
     VerifyEmailRequest,
     PaginatedUsersResponse,
     CreateAuditLogRequest,
+    CreateProject,
+    ProjectResponse,
 )
 
 from .auth import (
@@ -490,3 +492,28 @@ def verify_account(
     create_audit_log(db=db, request=request, log_data=log_data)
 
     return {"message": "Account verification successful"}
+
+
+@app.post("/projects/add", response_model=ProjectResponse)
+def create_new_project(
+    request: Request,
+    project_data: CreateProject,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    new_project = Project(
+        name=project_data.name, description=project_data.description, user_id=user.id
+    )
+
+    db.add(new_project)
+    db.commit()
+    db.refresh(new_project)
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=user.id,
+        event_type="CREATE PROJECT SUCCESS: Project created",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
+
+    return new_project

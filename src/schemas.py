@@ -93,3 +93,17 @@ class PaginatedUsersResponse(BaseModel):
 class CreateAuditLogRequest(BaseModel):
     user_id: int | None = None
     event_type: str
+
+
+class CreateProject(BaseModel):
+    name: str
+    description: str
+
+
+class ProjectResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    name: str 
+    description: str 
+    user_id: int
