@@ -114,3 +114,8 @@ class PaginatedProjects(BaseModel):
     page: int
     page_size: int
     projects: List[ProjectResponse]
+
+
+class UpdateProject(BaseModel):
+    name: str | None = None
+    description: str | None = None

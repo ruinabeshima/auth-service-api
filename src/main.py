@@ -26,6 +26,7 @@ from .schemas import (
     CreateProject,
     ProjectResponse,
     PaginatedProjects,
+    UpdateProject,
 )
 
 from .auth import (
@@ -589,3 +590,71 @@ def create_new_project(
     create_audit_log(db=db, request=request, log_data=log_data)
 
     return new_project
+
+
+@app.patch("/projects/{id}", response_model=ProjectResponse)
+def update_project(
+    id: int,
+    request: Request,
+    project_update: UpdateProject,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Get already existing project
+    project = db.query(Project).filter(Project.id == id).first()
+
+    if not project:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=user.id,
+            event_type="UPDATE PROJECT FAILURE:  Project not found",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    if project.user_id != user.id and user.role != "admin":  # type: ignore
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=user.id,
+            event_type="UPDATE PROJECT FAILURE: Not allowed to update project",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to update this project",
+        )
+
+    if project.is_deleted:  # type: ignore
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=user.id,
+            event_type="UPDATE PROJECT FAILURE:  Project has been deleted",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project has been deleted",
+        )
+
+    # Partial Updates
+    if project_update.name is not None:
+        project.name = project_update.name  # type: ignore
+    if project_update.description is not None:
+        project.description = project_update.description  # type: ignore
+    db.commit()
+    db.refresh(project)
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=user.id,
+        event_type="UPDATE PROJECT SUCCESS: Project has been updated",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
+
+    return project
