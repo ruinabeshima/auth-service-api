@@ -378,7 +378,7 @@ def logout_user(
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
-    if not db_refresh_token: 
+    if not db_refresh_token:
         # Add audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
@@ -441,20 +441,35 @@ def update_user_role(
 
 @app.post("/verify-account")
 def verify_account(
-    request: VerifyEmailRequest,
+    request: Request,
+    verify_request: VerifyEmailRequest,
     db: Session = Depends(get_db),
 ):
     # Verify the verification token
-    decoded_payload = verify_verification_token(request.token)
+    decoded_payload = verify_verification_token(verify_request.token)
     username = decoded_payload.get("sub")
 
     # Verify user exists in database
     db_user = db.query(User).filter(User.username == username).first()
     if not db_user:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="VERIFY ACCOUNT FAILURE: User not found",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(status_code=404, detail="User not found")
 
     # Update isEmailVerified
     db_user.is_email_verified = True  # type: ignore
     db.commit()
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=db_user.id,  # type: ignore
+        event_type="VERIFY ACCOUNT SUCCESS: Account verified",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
 
     return {"message": "Account verification successful"}
