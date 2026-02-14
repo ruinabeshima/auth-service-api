@@ -25,6 +25,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 - **PostgreSQL Storage**: Persistent user account storage via Neon
 - **Tests**: Unit tests and API tests implemented using Pytest
 - **Deployment**: CI/CD through Github Actions, and deployment on Google Cloud Run 
+- **Audit Logs**: Logging of all event types in the table `audit_logs`. Each log entry includes the user (if available), event type, IP address, and timestamp for security and traceability.
 
 ## Security Features 
 - Password hashing with bcrypt 
@@ -117,6 +118,7 @@ python create_admin.py <username>
 - `users`: id, username, email, hashed_password, role, is_email_verified 
 - `refresh_tokens`: id, token, user_id, created_at, expires_at, is_revoked
 - One to many relationship between users and refresh tokens: One user can have many refresh tokens 
+- `audit_logs`: id, user_id, event_type, ip_address, created_at
 
 
 ## Error Codes 
