@@ -91,6 +91,5 @@ class PaginatedUsersResponse(BaseModel):
 
 
 class CreateAuditLogRequest(BaseModel):
-    user_id : int 
-    event_type: str 
-    
+    user_id: int | None = None
+    event_type: str

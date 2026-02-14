@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, HTTPException, status, Depends
+from fastapi import FastAPI, HTTPException, status, Depends, Request
 from datetime import datetime, timezone
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -7,6 +7,7 @@ from .database import get_db
 from .models import User, RefreshToken
 from .email_service import send_password_reset_email, send_account_verification_email
 from .authorization import get_current_user, require_admin
+from .audit_logs import create_audit_log
 
 from .schemas import (
     RegisterUser,
@@ -21,6 +22,7 @@ from .schemas import (
     SendVerificationEmailRequest,
     VerifyEmailRequest,
     PaginatedUsersResponse,
+    CreateAuditLogRequest,
 )
 
 from .auth import (
@@ -45,11 +47,18 @@ def main():
 
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
-def register_user(user: RegisterUser, db: Session = Depends(get_db)):
+def register_user(user: RegisterUser, request: Request, db: Session = Depends(get_db)):
 
     # Raise exception - username already exists
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="REGISTER FAILURE: Username already exists",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
@@ -57,6 +66,13 @@ def register_user(user: RegisterUser, db: Session = Depends(get_db)):
     # Raise exception - email already exists
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
+        # Add audit log
+        log_data = CreateAuditLogRequest(
+            user_id=None,
+            event_type="REGISTER FAILURE: Email already exists",
+        )
+        create_audit_log(db=db, request=request, log_data=log_data)
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists"
         )
@@ -71,6 +87,13 @@ def register_user(user: RegisterUser, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Add audit log
+    log_data = CreateAuditLogRequest(
+        user_id=new_user.id,  # type: ignore
+        event_type="REGISTER SUCCESS: Verification email sent",
+    )
+    create_audit_log(db=db, request=request, log_data=log_data)
 
     # Send verification email
     verification_request = SendVerificationEmailRequest(

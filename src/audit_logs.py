@@ -6,7 +6,7 @@ from fastapi import Request, Depends
 
 
 # Helper function to create a new audit log and add to database
-def CreateAuditLog(
+def create_audit_log(
     request: Request, log_data: CreateAuditLogRequest, db: Session = Depends(get_db)
 ):
     new_audit_log = AuditLogs(
