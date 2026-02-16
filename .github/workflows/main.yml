@@ -116,5 +116,15 @@ jobs:
           region: asia-northeast1
           image: asia-northeast1-docker.pkg.dev/${{ vars.PROJECT_ID }}/auth-service-api/auth-service-api:${{ github.sha }}
           flags: '--allow-unauthenticated'
-          
+          env_vars: |
+            UPSTASH_REDIS_REST_URL=${{ secrets.UPSTASH_REDIS_REST_URL }}
+            UPSTASH_REDIS_REST_TOKEN=${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            ALGORITHM=${{ secrets.ALGORITHM }}
+            ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+            RESET_TOKEN_EXPIRE_MINUTES=${{ secrets.RESET_TOKEN_EXPIRE_MINUTES }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            REFRESH_TOKEN_EXPIRE_DAYS=${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS }}
+            VERIFICATION_TOKEN_EXPIRE_MINUTES=${{ secrets.VERIFICATION_TOKEN_EXPIRE_MINUTES }}
 
