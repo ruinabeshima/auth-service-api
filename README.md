@@ -140,6 +140,7 @@ python create_admin.py <username>
 - 403: Forbidden; valid token, but user lacks permission
 - 404: Not found; resource doesn't exist. 
 - 422: Schema validation; unprocessable entity 
+- 429: Too many requests
 - 500: Internal Server Error
 
 

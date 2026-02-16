@@ -36,6 +36,7 @@ pytest==9.0.2
 python-dotenv==1.2.1
 python-multipart==0.0.21
 PyYAML==6.0.3
+redis==7.1.1
 requests==2.32.5
 resend==2.21.0
 rich==14.2.0
@@ -48,6 +49,7 @@ starlette==0.50.0
 typer==0.21.1
 typing-inspection==0.4.2
 typing_extensions==4.15.0
+upstash-redis==1.6.0
 urllib3==2.6.3
 uvicorn==0.40.0
 uvloop==0.22.1
