@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from fastapi import FastAPI, HTTPException, status, Depends, Request
 from datetime import datetime, timezone
 
@@ -721,3 +722,14 @@ def delete_project(
     create_audit_log(db=db, request=request, log_data=log_data)
 
     return {"message": "Project has been successfully deleted"}
+
+
+@app.get("/health")
+def health_check(
+    db: Session = Depends(get_db),
+):
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception:
+        return {"status": "error", "database": "disconnected"}

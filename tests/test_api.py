@@ -2,6 +2,14 @@ import pytest
 from src.auth import create_verification_token
 
 
+class TestConnection:
+    def test_health_check(self, client):
+        response = client.get("/health")
+        assert response.status_code == 200
+        assert response.json()["status"] == "ok"
+        assert response.json()["database"] == "connected"
+
+
 class TestRegister:
     def test_register_flow(self, client):
         test_user = {

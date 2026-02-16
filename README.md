@@ -27,6 +27,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 - **Tests**: Unit tests and API tests implemented using Pytest
 - **Deployment**: CI/CD through Github Actions, and deployment on Google Cloud Run 
 - **Audit Logs**: Logging of all event types in the table `audit_logs`. Each log entry includes the user (if available), event type, IP address, and timestamp for security and traceability.
+- **Health Check**: The `GET /health` route confirms that the API is running and the database connection is established. 
 
 ## Security Features 
 - Password hashing with bcrypt 
@@ -111,6 +112,7 @@ python create_admin.py <username>
 | GET | `/admin/list` | Get list of all users (admin only) | 
 | GET | `/projects` | Get list of projects (owner and admin only) | 
 | GET | `/projects/{id}` | Get a singular project (owner and admin only) | 
+| GET | `/health` | Confirm the database connection and that the API is running | 
 | POST | `/register` | Create a new user account |
 | POST | `/login` | Login and receive access and refresh tokens |
 | POST | `/forgot-password` | Request password reset email |
