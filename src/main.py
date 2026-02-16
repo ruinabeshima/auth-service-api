@@ -9,6 +9,7 @@ from .models import User, RefreshToken, Project
 from .email_service import send_password_reset_email, send_account_verification_email
 from .authorization import get_current_user, require_admin
 from .audit_logs import create_audit_log
+from .redis import RateLimiter
 
 from .schemas import (
     RegisterUser,
@@ -51,7 +52,13 @@ def main():
     return {"message": "Welcome to my Python Authentication API!"}
 
 
-@app.post("/register", status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=Depends(
+        RateLimiter(limit=3, window_seconds=3600)
+    ),  # Only 3 registrations per hour
+)
 def register_user(user: RegisterUser, request: Request, db: Session = Depends(get_db)):
 
     # Raise exception - username already exists
@@ -114,7 +121,13 @@ def register_user(user: RegisterUser, request: Request, db: Session = Depends(ge
     }
 
 
-@app.post("/login", response_model=TokenResponse)
+@app.post(
+    "/login",
+    response_model=TokenResponse,
+    dependencies=Depends(
+        RateLimiter(limit=5, window_seconds=60)
+    ),  # Only 5 login attemps per minute
+)
 def login_user(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -190,7 +203,12 @@ def login_user(
     }
 
 
-@app.post("/forgot-password")
+@app.post(
+    "/forgot-password",
+    dependencies=Depends(
+        RateLimiter(limit=3, window_seconds=3600)
+    ),  # Only 3 attempts per hour
+)
 def forgot_password(
     request: Request, reset_data: ForgotPasswordRequest, db: Session = Depends(get_db)
 ):
@@ -227,7 +245,9 @@ def forgot_password(
     return {"message": "If the account exists, a reset link has been sent"}
 
 
-@app.post("/reset-password")
+@app.post(
+    "/reset-password", dependencies=Depends(RateLimiter(limit=3, window_seconds=3600))
+)
 def reset_password(
     request: Request, reset_data: ResetPasswordRequest, db: Session = Depends(get_db)
 ):
@@ -261,7 +281,13 @@ def reset_password(
     return {"message": "Password reset successful"}
 
 
-@app.post("/refresh", response_model=TokenResponse)
+@app.post(
+    "/refresh",
+    response_model=TokenResponse,
+    dependencies=Depends(
+        RateLimiter(limit=5, window_seconds=60)
+    ),  # Prevent refresh token abuse
+)
 def refresh_token(
     request: Request, refresh_data: RefreshTokenRequest, db: Session = Depends(get_db)
 ):
@@ -461,7 +487,12 @@ def update_user_role(
     return target_user
 
 
-@app.post("/verify-account")
+@app.post(
+    "/verify-account",
+    dependencies=Depends(
+        RateLimiter(limit=5, window_seconds=60)  # Prevent account verification abuse
+    ),
+)
 def verify_account(
     request: Request,
     verify_request: VerifyEmailRequest,
