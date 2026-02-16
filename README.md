@@ -12,6 +12,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 - **Authentication**: JWT (python-jose)
 - **Password Hashing**: bcrypt
 - **Email**: Resend
+- **Rate Limiting**: Redis 
 - **Testing**: Pytest
 - **Deployment**: Google Cloud Run
 - **CI/CD**: GitHub Actions
@@ -25,6 +26,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 - **Protected Routes**: Restrict access to authorized users only
 - **PostgreSQL Storage**: Persistent user account storage via Neon
 - **Tests**: Unit tests and API tests implemented using Pytest
+- **Rate Limiting**: Prevent abuse of routes by defining Redis middleware, using a fixed bucket counter
 - **Deployment**: CI/CD through Github Actions, and deployment on Google Cloud Run 
 - **Audit Logs**: Logging of all event types in the table `audit_logs`. Each log entry includes the user (if available), event type, IP address, and timestamp for security and traceability.
 - **Health Check**: The `GET /health` route confirms that the API is running and the database connection is established. 
@@ -35,6 +37,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 - Refresh token rotation 
 - Email verification requirement 
 - Role-based access control (RBAC)
+- Rate Limiting 
 
 
 ## Logic of the Application 
@@ -98,6 +101,14 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 ```bash
 python create_admin.py <username>
 ```
+
+### Rate Limiting 
+1. A fixed window counter algorithm is used with Redis as the backend. 
+2. Each client has a unique key in Redis that tracks the number of requests within a set time window 
+3. If the value exceeds the limit, error is returned 
+4. A new window automatically resets the count 
+5. The limit and window counter are taken in as parameters when utilised in routes. 
+
 
 ### Projects 
 1. Signed-in users can create a project, view them, update them and delete them. 
