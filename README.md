@@ -38,6 +38,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 - Email verification requirement 
 - Role-based access control (RBAC)
 - Rate Limiting 
+- Prevention of cross-user data access
 
 
 ## Logic of the Application 
@@ -117,7 +118,8 @@ python create_admin.py <username>
 
 ### Projects 
 1. Signed-in users can create a project, view them, update them and delete them. 
-2. Only the owners of the project and admins can interact with the project. 
+2. Ownership-based authorization is enforced at the service layer to prevent cross-user data access. Queries are scoped to the authenticated user unless the user has an admin role.
+3. is_delete ensures soft deletion instead of complete deletion; this preserves historical data and audit integrity. 
 
 
 ## API Routes
@@ -148,6 +150,12 @@ python create_admin.py <username>
 - `audit_logs`: id, user_id, event_type, ip_address, created_at
 - `projects`: id, name, description, user_id, created_at, updated_at, is_deleted
 - One to many relationship between users and refresh tokens, audit logs and projects
+
+### Database Indexing 
+- Several fields in each model were indexed for performance considerations. 
+- Indexing speeds up data retreival by creating optimised data structures containing that field only. 
+- However, creating the index structures slows down writing to the database. 
+- Keeping this in mind, only important fields were indexed. 
 
 
 ## Error Codes 
