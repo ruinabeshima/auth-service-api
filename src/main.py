@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from fastapi import FastAPI, HTTPException, status, Depends, Request
+from fastapi import FastAPI, HTTPException, status, Depends, Request, Query
 from datetime import datetime, timezone
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -55,9 +55,9 @@ def main():
 @app.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(
-        RateLimiter(limit=3, window_seconds=3600)
-    )],  # Only 3 registrations per hour
+    dependencies=[
+        Depends(RateLimiter(limit=3, window_seconds=3600))
+    ],  # Only 3 registrations per hour
 )
 def register_user(user: RegisterUser, request: Request, db: Session = Depends(get_db)):
 
@@ -124,9 +124,9 @@ def register_user(user: RegisterUser, request: Request, db: Session = Depends(ge
 @app.post(
     "/login",
     response_model=TokenResponse,
-    dependencies=[Depends(
-        RateLimiter(limit=5, window_seconds=60)
-    )],  # Only 5 login attemps per minute
+    dependencies=[
+        Depends(RateLimiter(limit=5, window_seconds=60))
+    ],  # Only 5 login attemps per minute
 )
 def login_user(
     request: Request,
@@ -205,9 +205,9 @@ def login_user(
 
 @app.post(
     "/forgot-password",
-    dependencies=[Depends(
-        RateLimiter(limit=3, window_seconds=3600)
-    )],  # Only 3 attempts per hour
+    dependencies=[
+        Depends(RateLimiter(limit=3, window_seconds=3600))
+    ],  # Only 3 attempts per hour
 )
 def forgot_password(
     request: Request, reset_data: ForgotPasswordRequest, db: Session = Depends(get_db)
@@ -284,9 +284,9 @@ def reset_password(
 @app.post(
     "/refresh",
     response_model=TokenResponse,
-    dependencies=[Depends(
-        RateLimiter(limit=5, window_seconds=60)
-    )],  # Prevent refresh token abuse
+    dependencies=[
+        Depends(RateLimiter(limit=5, window_seconds=60))
+    ],  # Prevent refresh token abuse
 )
 def refresh_token(
     request: Request, refresh_data: RefreshTokenRequest, db: Session = Depends(get_db)
@@ -434,8 +434,9 @@ def get_admin_page(admin_user=Depends(require_admin)):
 def get_admin_list(
     db: Session = Depends(get_db),
     admin_user: User = Depends(require_admin),
-    page: int = 1,
-    page_size: int = 10,
+    # Query parameters with validation
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=50),
 ):
     users_count = db.query(User).count()
 
@@ -489,9 +490,13 @@ def update_user_role(
 
 @app.post(
     "/verify-account",
-    dependencies=[Depends(
-        RateLimiter(limit=5, window_seconds=60)  # Prevent account verification abuse
-    )],
+    dependencies=[
+        Depends(
+            RateLimiter(
+                limit=5, window_seconds=60
+            )  # Prevent account verification abuse
+        )
+    ],
 )
 def verify_account(
     request: Request,
@@ -533,15 +538,21 @@ def get_user_projects(
     request: Request,
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
-    page: int = 1,
-    page_size: int = 10,
+    # Query parameters with validation
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
 ):
-    projects_count = db.query(Project).filter(Project.user_id == user.id).count()
+    projects_count = (
+        db.query(Project)
+        .filter(Project.user_id == user.id, Project.is_deleted == False)
+        .count()
+    )
     projects = (
         db.query(Project)
-        .filter(Project.user_id == user.id)
+        .filter(Project.user_id == user.id, Project.is_deleted == False)
         .offset((page - 1) * page_size)
         .limit(page_size)
+        .order_by(Project.created_at.desc())
         .all()
     )
 
