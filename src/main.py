@@ -55,9 +55,9 @@ def main():
 @app.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
-    dependencies=Depends(
+    dependencies=[Depends(
         RateLimiter(limit=3, window_seconds=3600)
-    ),  # Only 3 registrations per hour
+    )],  # Only 3 registrations per hour
 )
 def register_user(user: RegisterUser, request: Request, db: Session = Depends(get_db)):
 
@@ -124,9 +124,9 @@ def register_user(user: RegisterUser, request: Request, db: Session = Depends(ge
 @app.post(
     "/login",
     response_model=TokenResponse,
-    dependencies=Depends(
+    dependencies=[Depends(
         RateLimiter(limit=5, window_seconds=60)
-    ),  # Only 5 login attemps per minute
+    )],  # Only 5 login attemps per minute
 )
 def login_user(
     request: Request,
@@ -205,9 +205,9 @@ def login_user(
 
 @app.post(
     "/forgot-password",
-    dependencies=Depends(
+    dependencies=[Depends(
         RateLimiter(limit=3, window_seconds=3600)
-    ),  # Only 3 attempts per hour
+    )],  # Only 3 attempts per hour
 )
 def forgot_password(
     request: Request, reset_data: ForgotPasswordRequest, db: Session = Depends(get_db)
@@ -246,7 +246,7 @@ def forgot_password(
 
 
 @app.post(
-    "/reset-password", dependencies=Depends(RateLimiter(limit=3, window_seconds=3600))
+    "/reset-password", dependencies=[Depends(RateLimiter(limit=3, window_seconds=3600))]
 )
 def reset_password(
     request: Request, reset_data: ResetPasswordRequest, db: Session = Depends(get_db)
@@ -284,9 +284,9 @@ def reset_password(
 @app.post(
     "/refresh",
     response_model=TokenResponse,
-    dependencies=Depends(
+    dependencies=[Depends(
         RateLimiter(limit=5, window_seconds=60)
-    ),  # Prevent refresh token abuse
+    )],  # Prevent refresh token abuse
 )
 def refresh_token(
     request: Request, refresh_data: RefreshTokenRequest, db: Session = Depends(get_db)
@@ -489,9 +489,9 @@ def update_user_role(
 
 @app.post(
     "/verify-account",
-    dependencies=Depends(
+    dependencies=[Depends(
         RateLimiter(limit=5, window_seconds=60)  # Prevent account verification abuse
-    ),
+    )],
 )
 def verify_account(
     request: Request,

@@ -38,6 +38,10 @@ class RateLimiter:
         self.window_seconds = window_seconds
 
     async def __call__(self, request: Request):
+        # Disable rate limiting if env variable is set
+        if os.getenv("DISABLE_RATE_LIMITING") == "1":
+            return
+
         # Get client IP address and generate user-unique key
         forwarded = request.headers.get("X-Forwarded-For")
         client_ip = (
