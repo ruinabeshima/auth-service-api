@@ -104,10 +104,15 @@ python create_admin.py <username>
 
 ### Rate Limiting 
 1. A fixed window counter algorithm is used with Redis as the backend. 
-2. Each client has a unique key in Redis that tracks the number of requests within a set time window 
-3. If the value exceeds the limit, error is returned 
-4. A new window automatically resets the count 
+2. Each client has a unique key in Redis that tracks the number of requests within a set time window.
+3. If the value exceeds the limit, error is returned.
+4. A new window automatically resets the count.
 5. The limit and window counter are taken in as parameters when utilised in routes. 
+
+
+### Pagination 
+1. The routes `GET /admin/list` and `/projects` allow the page number and number of items per page to be taken in as parameters. 
+2. Parameter validation ensures that suitable values are input.
 
 
 ### Projects 

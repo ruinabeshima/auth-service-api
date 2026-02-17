@@ -550,9 +550,9 @@ def get_user_projects(
     projects = (
         db.query(Project)
         .filter(Project.user_id == user.id, Project.is_deleted == False)
+        .order_by(Project.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
-        .order_by(Project.created_at.desc())
         .all()
     )
 
