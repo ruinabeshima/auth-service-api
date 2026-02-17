@@ -1,6 +1,6 @@
-from .models import AuditLogs
-from .schemas import CreateAuditLogRequest
-from .database import get_db
+from src.models import AuditLogs
+from src.schemas import CreateAuditLogRequest
+from src.database import get_db
 from sqlalchemy.orm import Session
 from fastapi import Request, Depends
 

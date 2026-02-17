@@ -1,5 +1,5 @@
 import pytest
-from src.auth import create_verification_token
+from src.core.security import create_verification_token
 
 
 class TestConnection:

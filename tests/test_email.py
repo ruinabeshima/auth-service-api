@@ -1,11 +1,11 @@
-from src.email_service import send_account_verification_email, send_password_reset_email
+from src.core.email_service import send_account_verification_email, send_password_reset_email
 from unittest.mock import patch
 from src.schemas import SendVerificationEmailRequest, SendResetEmailRequest
 
 
 class TestAccountVerification:
 
-    @patch("src.email_service.resend.Emails.send")
+    @patch("src.core.email_service.resend.Emails.send")
     def test_account_verification_email(self, mock_send):
         mock_send.return_value = {"id": "user123"}
 
@@ -25,7 +25,7 @@ class TestAccountVerification:
         assert call_args["to"] == "user123@email.com"
         assert "token-123" in call_args["html"]
 
-    @patch("src.email_service.resend.Emails.send")
+    @patch("src.core.email_service.resend.Emails.send")
     def test_account_verification_email_failure(self, mock_send):
         mock_send.side_effect = Exception("API Error")
 
@@ -41,7 +41,7 @@ class TestAccountVerification:
 
 class TestPasswordReset:
 
-    @patch("src.email_service.resend.Emails.send")
+    @patch("src.core.email_service.resend.Emails.send")
     def test_password_reset_email(self, mock_send):
         mock_send.return_value = {"id": "user123"}
 
@@ -61,7 +61,7 @@ class TestPasswordReset:
         assert call_args["to"] == "user123@email.com"
         assert "token-123" in call_args["html"]
 
-    @patch("src.email_service.resend.Emails.send")
+    @patch("src.core.email_service.resend.Emails.send")
     def test_password_reset_email_failure(self, mock_send):
         mock_send.side_effect = Exception("API Error")
 

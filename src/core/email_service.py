@@ -1,6 +1,6 @@
 import os
 import resend
-from .schemas import SendResetEmailRequest, SendVerificationEmailRequest
+from ..schemas import SendResetEmailRequest, SendVerificationEmailRequest
 from dotenv import load_dotenv
 
 load_dotenv()

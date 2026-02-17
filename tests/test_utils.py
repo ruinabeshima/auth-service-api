@@ -4,7 +4,7 @@ import os
 from fastapi import HTTPException
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from src.auth import (
+from src.core.security import (
     create_access_token,
     verify_access_token,
     hash_password,
