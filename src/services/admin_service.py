@@ -53,7 +53,8 @@ def update_role(request, update_role_request, db, admin_user):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=admin_user.id,
-            event_type="UPDATE ROLE FAILURE: Target user not found",
+            event_type="UPDATE_ROLE_FAILURE",
+            reason="Target user not found",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -73,7 +74,7 @@ def update_role(request, update_role_request, db, admin_user):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=admin_user.id,
-        event_type="UPDATE_ROLE_SUCCESS: Role updated successfully",
+        event_type="UPDATE_ROLE_SUCCESS",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 

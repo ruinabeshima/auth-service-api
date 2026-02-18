@@ -12,6 +12,7 @@ def create_audit_log(
     new_audit_log = AuditLogs(
         user_id=log_data.user_id,
         event_type=log_data.event_type,
+        reason=log_data.reason,
         # IP Address accessed using client object
         ip_address=request.client.host if request.client else "Unknown",
     )
