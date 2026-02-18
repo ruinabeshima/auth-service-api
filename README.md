@@ -1,4 +1,4 @@
-# Project Management and Authentication API V1
+# Project Management and Authentication API 
 [![Python Authentication API CI/CD](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml/badge.svg)](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml)
 
 A backend service built with FastAPI to demonstrate authentication architecture using stateless JWT access tokens, refresh token rotation, RBAC, rate limiting, audit logging, and containerized cloud deployment.
