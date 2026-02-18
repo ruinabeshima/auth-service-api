@@ -34,6 +34,7 @@ from src.core.security import (
 
 def register(user, request, db):
 
+    # Logging
     logger.info(
         "Registration attempt",
         extra={"username": user.username, "email": user.email},
@@ -42,11 +43,13 @@ def register(user, request, db):
     # Raise exception - username already exists
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
+        # Logging
         logger.warning(
             "Registration failed - username already exists",
             extra={"username": user.username},
         )
 
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="REGISTER FAILURE: Username already exists",
@@ -60,10 +63,12 @@ def register(user, request, db):
     # Raise exception - email already exists
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
+        # Logging
         logger.warning(
             "Registration failed - email already exists", extra={"email": user.email}
         )
 
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="REGISTER FAILURE: Email already exists",
@@ -86,11 +91,13 @@ def register(user, request, db):
     db.commit()
     db.refresh(new_user)
 
+    # Logging
     logger.info(
         "User successfully created",
         extra={"user_id": new_user.id, "username": user.username},
     )
 
+    # Audit log
     log_data = CreateAuditLogRequest(
         user_id=new_user.id,  # type: ignore
         event_type="REGISTER SUCCESS: Verification email sent",
@@ -112,6 +119,7 @@ def register(user, request, db):
 
 
 def login(request, form_data, db):
+    # Logging
     logger.info("Login attempt", extra={"username": form_data.username})
 
     if "@" in form_data.username:
@@ -125,10 +133,12 @@ def login(request, form_data, db):
     if not db_user or not verify_password(
         form_data.password, str(db_user.hashed_password)
     ):
+        # Logging
         logger.warning(
             "Login failed - invalid credentials", extra={"username": form_data.username}
         )
 
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_user.id if db_user else None,  # type:ignore
             event_type="LOGIN FAILURE: Invalid credentials",
@@ -144,12 +154,13 @@ def login(request, form_data, db):
 
     # Raise exception - account is not verified
     if db_user.is_email_verified == False:  # type: ignore
+        # Logging
         logger.warning(
             "Login failed - account not verified",
             extra={"username": form_data.username},
         )
 
-        # Add audit log
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="LOGIN FAILURE: Account not verified",
@@ -177,11 +188,13 @@ def login(request, form_data, db):
     db.add(db_refresh_token)
     db.commit()
 
+    # Logging
     logger.info(
         "Login successful - tokens issued",
         extra={"username": db_user.username},
     )
 
+    # Audit log
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
         event_type="LOGIN SUCCESS: Access and refresh token obtained",
@@ -196,6 +209,7 @@ def login(request, form_data, db):
 
 
 def forgot_password(request, reset_data, db):
+    # Logging
     logger.info("Password reset requested", extra={"username": reset_data.email})
 
     # Verify email exists in database
@@ -209,11 +223,13 @@ def forgot_password(request, reset_data, db):
         )
         send_password_reset_email(new_request)
 
+        # Logging
         logger.info(
             "Password reset email sent",
             extra={"user_id": db_user.id},
         )
 
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_user.id,  # type: ignore
             event_type="EMAIL FORGOT PASSWORD SUCCESS: Email sent to reset password",
@@ -226,11 +242,13 @@ def forgot_password(request, reset_data, db):
             "reset_token": reset_token,
         }
 
+    # Logging
     logger.warning(
         "Password reset requested for non-existent account",
         extra={"username": reset_data.email},
     )
 
+    # Audit log
     log_data = CreateAuditLogRequest(
         user_id=None,
         event_type="EMAIL FORGOT PASSWORD FAILURE: Email does not exist",
@@ -241,6 +259,9 @@ def forgot_password(request, reset_data, db):
 
 
 def reset_password(request, reset_data, db):
+    # Logging
+    logger.info("Reset password request")
+
     # Verify the reset token
     decoded_payload = verify_reset_token(reset_data.token)
     username = decoded_payload.get("sub")
@@ -248,7 +269,12 @@ def reset_password(request, reset_data, db):
     # Verify user exists in database
     db_user = db.query(User).filter(User.username == username).first()
     if not db_user:
-        # Add audit log
+        # Logging
+        logger.warning(
+            "Reset password failure - user not found", extra={"username": username}
+        )
+
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="RESET PASSWORD FAILURE: User not found",
@@ -261,7 +287,12 @@ def reset_password(request, reset_data, db):
     db_user.hashed_password = hash_password(reset_data.new_password)  # type: ignore
     db.commit()
 
-    # Add audit log
+    # Logging
+    logger.info(
+        "Reset password success - password updated", extra={"user_id": db_user.id}
+    )
+
+    # Audit log
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
         event_type="RESET PASSWORD SUCCESS: Password reset successfully",
@@ -272,6 +303,9 @@ def reset_password(request, reset_data, db):
 
 
 def refresh(request, refresh_data, db):
+    # Logging
+    logger.info("Token refresh request")
+
     # Find refresh token in database
     db_refresh_token = (
         db.query(RefreshToken)
@@ -281,7 +315,10 @@ def refresh(request, refresh_data, db):
 
     # Token doesn't exist
     if not db_refresh_token:
-        # Add audit log
+        # Logging
+        logger.warning("Refresh token failure - token does not exist")
+
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="REFRESH TOKEN FAILURE: Token does not exist",
@@ -294,7 +331,13 @@ def refresh(request, refresh_data, db):
 
     # Token is revoked
     if db_refresh_token.is_revoked:  # type:ignore
-        # Add audit log
+        # Logging
+        logger.warning(
+            "Refresh token failure - token revoked",
+            extra={"user_id": db_refresh_token.user_id},
+        )
+
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_refresh_token.user_id,  # type: ignore
             event_type="REFRESH TOKEN FAILURE: Token is revoked",
@@ -308,7 +351,13 @@ def refresh(request, refresh_data, db):
 
     # Token has expired
     if db_refresh_token.expires_at < datetime.now(timezone.utc):  # type:ignore
-        # Add audit log
+        # Logging
+        logger.warning(
+            "Refresh token failure - token revoked",
+            extra={"user_id": db_refresh_token.user_id},
+        )
+
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_refresh_token.user_id,  # type: ignore
             event_type="REFRESH TOKEN FAILURE: Token has expired",
@@ -325,7 +374,10 @@ def refresh(request, refresh_data, db):
     # Get user from database if refresh token is valid
     db_user = db.query(User).filter(User.id == db_refresh_token.user_id).first()
     if not db_user:
-        # Add audit log
+        # Logging
+        logger.warning("Refresh token failure - user not found")
+
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="REFRESH TOKEN FAILURE: User not found",
@@ -354,7 +406,10 @@ def refresh(request, refresh_data, db):
     db.add(new_db_refresh_token)
     db.commit()
 
-    # Add audit log
+    # Logging
+    logger.info("Refresh token success - tokens rotated", extra={"user_id": db_user.id})
+
+    # Audit log
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
         event_type="REFRESH TOKEN SUCCESS: New access token generated and refresh token rotated",
@@ -369,6 +424,9 @@ def refresh(request, refresh_data, db):
 
 
 def logout(request, logout_request, db):
+    # Logging
+    logger.info("Logout request")
+
     # Get refresh token and revoke
     db_refresh_token = (
         db.query(RefreshToken)
@@ -380,7 +438,13 @@ def logout(request, logout_request, db):
         db_refresh_token.is_revoked = True  # type:ignore
         db.commit()
 
-        # Add audit log
+        # Logging
+        logger.info(
+            "Logout success - user logged out",
+            extra={"user_id": db_refresh_token.user_id},
+        )
+
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_refresh_token.user_id,  # type: ignore
             event_type="LOGOUT SUCCESS: User logged out",
@@ -388,7 +452,10 @@ def logout(request, logout_request, db):
         create_audit_log(db=db, request=request, log_data=log_data)
 
     if not db_refresh_token:
-        # Add audit log
+        # Logging
+        logger.warning("Logout failure - refresh token not found")
+
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="LOGOUT FAILURE: Refresh token not found",
@@ -399,6 +466,9 @@ def logout(request, logout_request, db):
 
 
 def verify(request, verify_request, db):
+    # Logging
+    logger.info("Account verification atttempt")
+
     # Verify the verification token
     decoded_payload = verify_verification_token(verify_request.token)
     username = decoded_payload.get("sub")
@@ -406,7 +476,10 @@ def verify(request, verify_request, db):
     # Verify user exists in database
     db_user = db.query(User).filter(User.username == username).first()
     if not db_user:
-        # Add audit log
+        # Logging
+        logger.warning("Account verification failure - user not found")
+
+        # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="VERIFY ACCOUNT FAILURE: User not found",
@@ -419,7 +492,12 @@ def verify(request, verify_request, db):
     db_user.is_email_verified = True  # type: ignore
     db.commit()
 
-    # Add audit log
+    # Logging
+    logger.info(
+        "Account verification success - user verified", extra={"user_id": db_user.id}
+    )
+
+    # Audit log
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
         event_type="VERIFY ACCOUNT SUCCESS: Account verified",
