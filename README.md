@@ -1,7 +1,7 @@
-# Project Management and Authentication API 
+# Project Management and Authentication API V1
 [![Python Authentication API CI/CD](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml/badge.svg)](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml)
 
-A backend service built with FastAPI to demonstrate authentication, authorization, and backend engineering fundamentals.
+A backend service built with FastAPI to demonstrate authentication architecture using stateless JWT access tokens, refresh token rotation, RBAC, rate limiting, audit logging, and containerized cloud deployment.
 
 
 ## Tech Stack 
@@ -20,11 +20,14 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 
 
 ## Architecture 
-- The application is designed with scalability and modularity in mind:
+- The application is designed with scalability and modularity in mind. 
 - The project is organized into clear modules (`api`, `core`, `services`, `models`, `schemas`) to separate concerns and make it easy to extend or refactor individual components.
-- The API is stateless, enabling horizontal scaling via load balancers.
+- The API is stateless, enabling horizontal scaling (Redis).
+- Production secrets are different from local variables, are stored in Github Secrets.
 - Redis is used for rate limiting and can be scaled independently.
 - Docker containerization allows easy deployment and scaling.
+- Database indexes are chosen based on query patterns.
+- Soft deletion of projects allows audit integrity
 - Designed for Google Cloud Run, which auto-scales instances.
 
 
@@ -70,6 +73,8 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
   - Unit tests and API tests. Test have an isolated test database setup
   - Docker containerisation: `docker-compose.yml` is used for local development, and `Dockerfile` is used for production builds.
   - Github actions
+- **API Versioning**
+  - `src/api/v1`
 
 
 ## Application Logic 
@@ -78,7 +83,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 1. Access tokens are used to authenticate requests to protected endpoints. 
 2. JWT tokens are used as access tokens, which are short-lived. 
 3. They are made up of the header, payload and signature. 
-  - The header contains `Authorization: Bearer: <access_token>` which is used to access protected routes. 
+  - The HTTP request header contains `Authorization: Bearer: <access_token>` which is used to access protected routes. 
   - The payload contains encoded meta-information such as the expiration time of the token as well as username. 
 4. They are stateless, which means no database lookup is involved, and are validated using a secret key. 
 
@@ -165,6 +170,14 @@ python create_admin.py <username>
 ### Structured Logs 
 1. Output in JSON format in the console. 
 2. Intended for developers and operations monitoring. 
+3. Example: 
+  `{
+    "timestamp": "2026-02-17T12:30:01Z",
+    "level": "INFO",
+    "event": "USER_LOGIN_SUCCESS",
+    "user_id": 12,
+    "ip_address": "192.168.1.10"
+  }`
 
 
 ## API Routes
