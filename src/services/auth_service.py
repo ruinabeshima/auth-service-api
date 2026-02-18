@@ -196,6 +196,8 @@ def login(request, form_data, db):
 
 
 def forgot_password(request, reset_data, db):
+    logger.info("Password reset requested", extra={"username": reset_data.email})
+
     # Verify email exists in database
     db_user = db.query(User).filter(User.email == reset_data.email).first()
 
@@ -207,7 +209,11 @@ def forgot_password(request, reset_data, db):
         )
         send_password_reset_email(new_request)
 
-        # Add audit log
+        logger.info(
+            "Password reset email sent",
+            extra={"user_id": db_user.id},
+        )
+
         log_data = CreateAuditLogRequest(
             user_id=db_user.id,  # type: ignore
             event_type="EMAIL FORGOT PASSWORD SUCCESS: Email sent to reset password",
@@ -216,10 +222,15 @@ def forgot_password(request, reset_data, db):
 
         return {
             "message": "If the account exists, a reset link has been sent",
+            # TODO: REMOVE IN PRODUCTION
             "reset_token": reset_token,
         }
 
-    # Add audit log
+    logger.warning(
+        "Password reset requested for non-existent account",
+        extra={"username": reset_data.email},
+    )
+
     log_data = CreateAuditLogRequest(
         user_id=None,
         event_type="EMAIL FORGOT PASSWORD FAILURE: Email does not exist",
