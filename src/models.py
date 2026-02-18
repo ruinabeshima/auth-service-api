@@ -1,4 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    DateTime,
+    Boolean,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 from .database import Base
 from datetime import datetime, timezone
@@ -7,10 +16,10 @@ from datetime import datetime, timezone
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    role = Column(String, default="user")
+    username = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, default="user", nullable=False)
 
     is_email_verified = Column(Boolean, default=False)
 
@@ -28,7 +37,9 @@ class RefreshToken(Base):
         Integer, ForeignKey("users.id")
     )  # Foreign key constraint that enforces referential integrity (can't have a refresh token for a non-existent user)
     created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
     expires_at = Column(DateTime(timezone=True))
     # Used to manually invalidate refresh tokens
@@ -45,9 +56,12 @@ class AuditLogs(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     event_type = Column(String)
+    reason = Column(String, nullable=True)
     ip_address = Column(String)
     created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
 
     user = relationship("User", back_populates="audit_logs")
@@ -77,6 +91,4 @@ class Project(Base):
     user = relationship("User", back_populates="projects")
 
     # Constraint: One user cannot have two projects with the same name, but different users can have projects with the same name
-    __table_args__ = (
-        UniqueConstraint("user_id", "name", name="uq_user_project_name"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_user_project_name"),)
