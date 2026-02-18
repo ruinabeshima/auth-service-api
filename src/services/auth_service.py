@@ -1,5 +1,8 @@
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.models import User, RefreshToken
 from src.core.email_service import (
@@ -16,7 +19,6 @@ from src.schemas import (
     CreateAuditLogRequest,
 )
 
-
 from src.core.security import (
     hash_password,
     verify_password,
@@ -31,10 +33,20 @@ from src.core.security import (
 
 
 def register(user, request, db):
+
+    logger.info(
+        "Registration attempt",
+        extra={"username": user.username, "email": user.email},
+    )
+
     # Raise exception - username already exists
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
-        # Add audit log
+        logger.warning(
+            "Registration failed - username already exists",
+            extra={"username": user.username},
+        )
+
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="REGISTER FAILURE: Username already exists",
@@ -48,7 +60,10 @@ def register(user, request, db):
     # Raise exception - email already exists
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
-        # Add audit log
+        logger.warning(
+            "Registration failed - email already exists", extra={"email": user.email}
+        )
+
         log_data = CreateAuditLogRequest(
             user_id=None,
             event_type="REGISTER FAILURE: Email already exists",
@@ -61,6 +76,7 @@ def register(user, request, db):
 
     # Hash password
     hashed_password = hash_password(user.password)
+    logger.info("Password hashed for new user", extra={"username": user.username})
 
     # Add user to database
     new_user = User(
@@ -70,7 +86,11 @@ def register(user, request, db):
     db.commit()
     db.refresh(new_user)
 
-    # Add audit log
+    logger.info(
+        "User successfully created",
+        extra={"user_id": new_user.id, "username": user.username},
+    )
+
     log_data = CreateAuditLogRequest(
         user_id=new_user.id,  # type: ignore
         event_type="REGISTER SUCCESS: Verification email sent",
