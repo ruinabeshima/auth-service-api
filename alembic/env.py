@@ -10,7 +10,7 @@ load_dotenv()
 
 # Import your models
 from src.database import Base
-from src.models import User  # noqa: F401
+import src.models  # noqa: F401
 
 # Alembic Config object
 config = context.config
