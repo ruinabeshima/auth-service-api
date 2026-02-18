@@ -112,6 +112,8 @@ def register(user, request, db):
 
 
 def login(request, form_data, db):
+    logger.info("Login attempt", extra={"username": form_data.username})
+
     if "@" in form_data.username:
         # Get email from database
         db_user = db.query(User).filter(User.email == form_data.username).first()
@@ -123,7 +125,10 @@ def login(request, form_data, db):
     if not db_user or not verify_password(
         form_data.password, str(db_user.hashed_password)
     ):
-        # Add audit log
+        logger.warning(
+            "Login failed - invalid credentials", extra={"username": form_data.username}
+        )
+
         log_data = CreateAuditLogRequest(
             user_id=db_user.id if db_user else None,  # type:ignore
             event_type="LOGIN FAILURE: Invalid credentials",
@@ -139,6 +144,11 @@ def login(request, form_data, db):
 
     # Raise exception - account is not verified
     if db_user.is_email_verified == False:  # type: ignore
+        logger.warning(
+            "Login failed - account not verified",
+            extra={"username": form_data.username},
+        )
+
         # Add audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
@@ -167,7 +177,11 @@ def login(request, form_data, db):
     db.add(db_refresh_token)
     db.commit()
 
-    # Add audit log
+    logger.info(
+        "Login successful - tokens issued",
+        extra={"username": db_user.username},
+    )
+
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
         event_type="LOGIN SUCCESS: Access and refresh token obtained",
