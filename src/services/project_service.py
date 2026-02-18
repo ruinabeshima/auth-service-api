@@ -101,7 +101,7 @@ def add_project(request, project_data, user, db):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=user.id,
-        event_type="CREATE PROJECT SUCCESS: Project created",
+        event_type="CREATE_PROJECT_SUCCESS",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -124,7 +124,8 @@ def update_project(id, request, project_update, user, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=user.id,
-            event_type="UPDATE PROJECT FAILURE:  Project not found",
+            event_type="UPDATE_PROJECT_FAILURE",
+            reason="Project not found",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -142,7 +143,8 @@ def update_project(id, request, project_update, user, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=user.id,
-            event_type="UPDATE PROJECT FAILURE: Not allowed to update project",
+            event_type="UPDATE_PROJECT_FAILURE",
+            reason="Not allowed to update project",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -160,7 +162,8 @@ def update_project(id, request, project_update, user, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=user.id,
-            event_type="UPDATE PROJECT FAILURE:  Project has been deleted",
+            event_type="UPDATE_PROJECT_FAILURE",
+            reason="Project has been deleted",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -186,7 +189,7 @@ def update_project(id, request, project_update, user, db):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=user.id,
-        event_type="UPDATE PROJECT SUCCESS: Project has been updated",
+        event_type="UPDATE_PROJECT_SUCCESS",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -209,7 +212,8 @@ def delete_project(id, request, user, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=user.id,
-            event_type="DELETE PROJECT FAILURE:  Project not found",
+            event_type="DELETE_PROJECT_FAILURE",
+            reason="Project not found",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -227,7 +231,8 @@ def delete_project(id, request, user, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=user.id,
-            event_type="DELETE PROJECT FAILURE: Not allowed to delete project",
+            event_type="DELETE_PROJECT_FAILURE",
+            reason="Not allowed to delete project",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -246,7 +251,8 @@ def delete_project(id, request, user, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=user.id,
-            event_type="DELETE PROJECT FAILURE:  Project has been deleted already",
+            event_type="DELETE_PROJECT_FAILURE",
+            reason="Project has been deleted already",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -268,7 +274,7 @@ def delete_project(id, request, user, db):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=user.id,
-        event_type="DELETE PROJECT SUCCESS: Project has been deleted successfully",
+        event_type="DELETE_PROJECT_SUCCESS",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
