@@ -52,7 +52,8 @@ def register(user, request, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
-            event_type="REGISTER FAILURE: Username already exists",
+            event_type="USER_REGISTER_FAILURE",
+            reason="Username already exists",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -71,7 +72,8 @@ def register(user, request, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
-            event_type="REGISTER FAILURE: Email already exists",
+            event_type="USER_REGISTER_FAILURE",
+            reason="Email already exists",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -99,8 +101,7 @@ def register(user, request, db):
 
     # Audit log
     log_data = CreateAuditLogRequest(
-        user_id=new_user.id,  # type: ignore
-        event_type="REGISTER SUCCESS: Verification email sent",
+        user_id=new_user.id, event_type="USER_REGISTER_SUCCESS"  # type: ignore
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -141,7 +142,8 @@ def login(request, form_data, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_user.id if db_user else None,  # type:ignore
-            event_type="LOGIN FAILURE: Invalid credentials",
+            event_type="USER_LOGIN_FAILURE",
+            reason="Invalid credentials",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -162,8 +164,7 @@ def login(request, form_data, db):
 
         # Audit log
         log_data = CreateAuditLogRequest(
-            user_id=None,
-            event_type="LOGIN FAILURE: Account not verified",
+            user_id=None, event_type="USER_LOGIN_FAILURE", reason="Account not verified"
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -197,7 +198,7 @@ def login(request, form_data, db):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
-        event_type="LOGIN SUCCESS: Access and refresh token obtained",
+        event_type="USER_LOGIN_SUCCESS",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -232,7 +233,7 @@ def forgot_password(request, reset_data, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_user.id,  # type: ignore
-            event_type="EMAIL FORGOT PASSWORD SUCCESS: Email sent to reset password",
+            event_type="FORGOT_PASSWORD_SUCCESS",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -251,7 +252,8 @@ def forgot_password(request, reset_data, db):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=None,
-        event_type="EMAIL FORGOT PASSWORD FAILURE: Email does not exist",
+        event_type="FORGOT_PASSWORD_FAILURE",
+        reason="Email does not exist",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -276,8 +278,7 @@ def reset_password(request, reset_data, db):
 
         # Audit log
         log_data = CreateAuditLogRequest(
-            user_id=None,
-            event_type="RESET PASSWORD FAILURE: User not found",
+            user_id=None, event_type="RESET_PASSWORD_FAILURE", reason="User not found"
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -295,7 +296,7 @@ def reset_password(request, reset_data, db):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
-        event_type="RESET PASSWORD SUCCESS: Password reset successfully",
+        event_type="RESET_PASSWORD_SUCCESS",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -321,7 +322,8 @@ def refresh(request, refresh_data, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=None,
-            event_type="REFRESH TOKEN FAILURE: Token does not exist",
+            event_type="REFRESH_TOKEN_FAILURE",
+            reason="Token does not exist",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -340,7 +342,8 @@ def refresh(request, refresh_data, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_refresh_token.user_id,  # type: ignore
-            event_type="REFRESH TOKEN FAILURE: Token is revoked",
+            event_type="REFRESH_TOKEN_FAILURE",
+            reason="Token is revoked",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -360,7 +363,8 @@ def refresh(request, refresh_data, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_refresh_token.user_id,  # type: ignore
-            event_type="REFRESH TOKEN FAILURE: Token has expired",
+            event_type="REFRESH_TOKEN_FAILURE",
+            reason="Token has expired",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -379,8 +383,7 @@ def refresh(request, refresh_data, db):
 
         # Audit log
         log_data = CreateAuditLogRequest(
-            user_id=None,
-            event_type="REFRESH TOKEN FAILURE: User not found",
+            user_id=None, event_type="REFRESH_TOKEN_FAILURE", reason="User not found"
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -412,7 +415,7 @@ def refresh(request, refresh_data, db):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
-        event_type="REFRESH TOKEN SUCCESS: New access token generated and refresh token rotated",
+        event_type="REFRESH_TOKEN_SUCCESS",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -447,7 +450,7 @@ def logout(request, logout_request, db):
         # Audit log
         log_data = CreateAuditLogRequest(
             user_id=db_refresh_token.user_id,  # type: ignore
-            event_type="LOGOUT SUCCESS: User logged out",
+            event_type="LOGOUT_SUCCESS",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -457,8 +460,7 @@ def logout(request, logout_request, db):
 
         # Audit log
         log_data = CreateAuditLogRequest(
-            user_id=None,
-            event_type="LOGOUT FAILURE: Refresh token not found",
+            user_id=None, event_type="LOGOUT_FAILURE", reason="Refresh token not found"
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -481,8 +483,7 @@ def verify(request, verify_request, db):
 
         # Audit log
         log_data = CreateAuditLogRequest(
-            user_id=None,
-            event_type="VERIFY ACCOUNT FAILURE: User not found",
+            user_id=None, event_type="VERIFY_ACCOUNT_FAILURE", reason="User not found"
         )
         create_audit_log(db=db, request=request, log_data=log_data)
 
@@ -500,7 +501,7 @@ def verify(request, verify_request, db):
     # Audit log
     log_data = CreateAuditLogRequest(
         user_id=db_user.id,  # type: ignore
-        event_type="VERIFY ACCOUNT SUCCESS: Account verified",
+        event_type="VERIFY_ACCOUNT_SUCCESS",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
 
