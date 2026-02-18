@@ -1,7 +1,9 @@
 # Project Management and Authentication API 
 [![Python Authentication API CI/CD](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml/badge.svg)](https://github.com/ruinabeshima/auth-service-api/actions/workflows/main.yml)
 
-A backend service built with FastAPI to demonstrate authentication architecture using stateless JWT access tokens, refresh token rotation, RBAC, rate limiting, audit logging, and containerized cloud deployment.
+- Try it out: https://auth-service-api-247931221656.asia-northeast1.run.app/docs
+- A backend service built with FastAPI to demonstrate authentication architecture using stateless JWT access tokens, refresh token rotation, RBAC, rate limiting, audit logging, and containerized cloud deployment.
+
 
 
 ## Tech Stack 
