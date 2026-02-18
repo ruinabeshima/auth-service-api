@@ -14,34 +14,65 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 - **Email**: Resend
 - **Rate Limiting**: Redis 
 - **Testing**: Pytest
+- **Logging**: python-json-logger
 - **Deployment**: Google Cloud Run
 - **CI/CD**: GitHub Actions
 
-## Features 
-- **Projects**: Signed-in users can create their own projects, view a list of their projects, view a single project, update their project and delete their projects. 
-- **User Registration**: Secure signup with password hashing using bcrypt
-- **JWT Authentication**: Stateless login issuing signed bearer tokens
-- **Password Reset**: Secure password reset flow with email verification
-- **Email Service**: Integrated with Resend for transactional emails
-- **Protected Routes**: Restrict access to authorized users only
-- **PostgreSQL Storage**: Persistent user account storage via Neon
-- **Tests**: Unit tests and API tests implemented using Pytest
-- **Rate Limiting**: Prevent abuse of routes by defining Redis middleware, using a fixed bucket counter
-- **Deployment**: CI/CD through Github Actions, and deployment on Google Cloud Run 
-- **Audit Logs**: Logging of all event types in the table `audit_logs`. Each log entry includes the user (if available), event type, IP address, and timestamp for security and traceability.
-- **Health Check**: The `GET /health` route confirms that the API is running and the database connection is established. 
 
-## Security Features 
-- Password hashing with bcrypt 
-- JWT token expiration 
-- Refresh token rotation 
-- Email verification requirement 
-- Role-based access control (RBAC)
-- Rate Limiting 
-- Prevention of cross-user data access
+## Architecture 
+- The application is designed with scalability and modularity in mind:
+- The project is organized into clear modules (`api`, `core`, `services`, `models`, `schemas`) to separate concerns and make it easy to extend or refactor individual components.
+- The API is stateless, enabling horizontal scaling via load balancers.
+- Redis is used for rate limiting and can be scaled independently.
+- Docker containerization allows easy deployment and scaling.
+- Designed for Google Cloud Run, which auto-scales instances.
 
 
-## Logic of the Application 
+## Features
+- **User Accounts** 
+  - User registration 
+  - User login 
+  - Email verification 
+  - Password reset by email 
+  - Access tokens and refresh token rotation 
+  - Logout
+- **Projects** 
+  - Create project 
+  - View user projects 
+  - View individual project by ID 
+  - Edit project 
+  - Delete project 
+- **Admin Perks** 
+  - View a paginated list of all users 
+  - View a paginated list of all projects 
+  - Update user roles 
+- **Security**
+  - Password hashing with bcrypt 
+  - JWT token expiration 
+  - Refresh token rotation 
+  - Email verification requirement 
+  - Role-based access control (RBAC)
+  - Rate Limiting 
+  - Prevention of cross-user data access
+  - All sensitive operations are logged for audit purposes
+- **Environment Variables** 
+  - All `.env` variables are in `.env.example` 
+  - Variables for production are configured in Github Secrets
+  - See `.env.example` for all required environment variables
+- **Developer Ease** 
+  - Easy to read comments 
+  - Consistent audit logging and structured logs 
+  - Detailed commit messages 
+  - Database migration history 
+  - Locally hosted Postgres database, with production database configured to run on Neon
+- **CICD** 
+  - Runs tests and deploys to Google Cloud Run automatically
+  - Unit tests and API tests. Test have an isolated test database setup
+  - Docker containerisation: `docker-compose.yml` is used for local development, and `Dockerfile` is used for production builds.
+  - Github actions
+
+
+## Application Logic 
 
 ### Access Tokens 
 1. Access tokens are used to authenticate requests to protected endpoints. 
@@ -53,7 +84,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 
 ### Refresh Tokens 
 1. Refresh tokens improve security by limiting how long access tokens remain valid while still allowing users to stay logged in.
-2. . Refresh tokens are long-lived tokens which are stored in a table in the database. Users have a one-to-many relationship with refresh tokens. 
+2. Refresh tokens are long-lived tokens which are stored in a table in the database. Users have a one-to-many relationship with refresh tokens. 
 3. They are used to generate new access tokens when the old access token expires, through the `POST /refresh` route. 
 4. Once a new access token is generated, the refresh token is revoked and a new one is generated. This is refresh token rotation. 
 5. The refresh token is also revoked and deleted from the database if expired, which means the user must log in again.  
@@ -76,7 +107,7 @@ A backend service built with FastAPI to demonstrate authentication, authorizatio
 
 ### Logout 
 1. In the `POST /logout` route, the user's refresh token is revoked.
-2. All refresh tokens are revoked for a suser. 
+2. All refresh tokens are revoked for a user. 
 2. This means logging out of one device logs the user out of everywhere.
 
 ### Password Reset
@@ -109,17 +140,31 @@ python create_admin.py <username>
 3. If the value exceeds the limit, error is returned.
 4. A new window automatically resets the count.
 5. The limit and window counter are taken in as parameters when utilised in routes. 
-
+6. Supports both Upstash Redis REST for production and local Redis for deployment
 
 ### Pagination 
 1. The routes `GET /admin/list` and `/projects` allow the page number and number of items per page to be taken in as parameters. 
 2. Parameter validation ensures that suitable values are input.
 
-
 ### Projects 
 1. Signed-in users can create a project, view them, update them and delete them. 
 2. Ownership-based authorization is enforced at the service layer to prevent cross-user data access. Queries are scoped to the authenticated user unless the user has an admin role.
-3. is_delete ensures soft deletion instead of complete deletion; this preserves historical data and audit integrity. 
+3. is_deleted ensures soft deletion instead of complete deletion; this preserves historical data and audit integrity. 
+4. The database ensures a single user cannot have two projects with the same name.
+
+### Audit Logs 
+1. Audit logs are applied to: 
+  - Authentication events
+  - Role and permission changes 
+  - Data modification actions (create, update, delete)
+  - Authorization failures on protected operations
+2. All event types are consistent to allow to easy querying in the database; ex. `UPDATE_PROJECT_SUCCESS`, `USER_LOGIN_FAILURE`.
+3. If there is a reason for a failure, it is included in the `reason` column. 
+4. Audit logs are intended for security monitoring and forensic tracability.
+
+### Structured Logs 
+1. Output in JSON format in the console. 
+2. Intended for developers and operations monitoring. 
 
 
 ## API Routes
@@ -147,13 +192,13 @@ python create_admin.py <username>
 ## Database Models 
 - `users`: id, username, email, hashed_password, role, is_email_verified 
 - `refresh_tokens`: id, token, user_id, created_at, expires_at, is_revoked
-- `audit_logs`: id, user_id, event_type, ip_address, created_at
+- `audit_logs`: id, user_id, event_type, reason, ip_address, created_at
 - `projects`: id, name, description, user_id, created_at, updated_at, is_deleted
 - One to many relationship between users and refresh tokens, audit logs and projects
 
 ### Database Indexing 
 - Several fields in each model were indexed for performance considerations. 
-- Indexing speeds up data retreival by creating optimised data structures containing that field only. 
+- Indexing speeds up data retrieval by creating optimised data structures containing that field only. 
 - However, creating the index structures slows down writing to the database. 
 - Keeping this in mind, only important fields were indexed. 
 
