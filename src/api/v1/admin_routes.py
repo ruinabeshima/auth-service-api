@@ -23,7 +23,7 @@ def get_admin_list(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=50),
 ):
-    return admin_service.get_admin_list(db, admin_user, page, page_size)
+    return admin_service.get_users_list(db, admin_user, page, page_size)
 
 
 @router.patch("/admin/update_role", response_model=UserResponse)

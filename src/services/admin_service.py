@@ -2,15 +2,22 @@ from fastapi import HTTPException, status
 from src.models import User
 from src.schemas import PaginatedUsersResponse, CreateAuditLogRequest
 from .audit_service import create_audit_log
+import logging
 
-# ...existing code...
+logger = logging.getLogger(__name__)
 
 
 def get_admin_page(admin_user):
     return admin_user
 
 
-def get_admin_list(db, admin_user, page, page_size):
+def get_users_list(db, admin_user, page, page_size):
+    # Logging
+    logger.info(
+        "Get users list request",
+        extra={"page": page, "page_size": page_size, "user_id": admin_user.id},
+    )
+
     users_count = db.query(User).count()
 
     # Offset: Starting index for the database query
@@ -19,18 +26,33 @@ def get_admin_list(db, admin_user, page, page_size):
     response = PaginatedUsersResponse(
         total=users_count, page=page, page_size=page_size, users=users  # type: ignore
     )
+
+    # Logging
+    logger.info(
+        "Get users list success",
+        extra={"page": page, "page_size": page_size, "user_id": admin_user.id},
+    )
     return response
 
 
 def update_role(request, update_role_request, db, admin_user):
+    # Logging
+    logger.info("Update user role request", extra={"user_id": update_role_request.id})
+
     # Retrieve user from database
     target_user = (
         db.query(User).filter(User.username == update_role_request.username).first()
     )
     if not target_user:
-        # Add audit log
+        # Logging
+        logger.warning(
+            "Update user role failure - user not found",
+            extra={"user_id": update_role_request.id},
+        )
+
+        # Audit log
         log_data = CreateAuditLogRequest(
-            user_id=None,
+            user_id=admin_user.id,
             event_type="UPDATE ROLE FAILURE: Target user not found",
         )
         create_audit_log(db=db, request=request, log_data=log_data)
@@ -45,9 +67,12 @@ def update_role(request, update_role_request, db, admin_user):
     db.commit()
     db.refresh(target_user)
 
-    # Add audit log
+    # Logging
+    logger.info("Update user role success", extra={"user_id": update_role_request.id})
+
+    # Audit log
     log_data = CreateAuditLogRequest(
-        user_id=target_user.id,  # type: ignore
+        user_id=admin_user.id,
         event_type="UPDATE_ROLE_SUCCESS: Role updated successfully",
     )
     create_audit_log(db=db, request=request, log_data=log_data)
